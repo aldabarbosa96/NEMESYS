@@ -1,67 +1,67 @@
 package com.nemesys.ui;
 
-import com.badlogic.gdx.graphics.Color;
-import com.badlogic.gdx.graphics.Pixmap;
-import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.*;
 import com.badlogic.gdx.scenes.scene2d.ui.*;
-import com.badlogic.gdx.scenes.scene2d.utils.Drawable;
-import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
+import com.badlogic.gdx.scenes.scene2d.utils.*;
 import com.badlogic.gdx.utils.Align;
+import com.nemesys.fs.FileSystemSim;
 
-import java.time.LocalTime;
+
 import java.time.format.DateTimeFormatter;
 
 public final class TerminalWindow extends BaseWindow {
 
     private final WindowManager manager;
+    private final FileSystemSim fs;
     private final Skin skin;
+
     private final Table terminal;
     private final ScrollPane scroll;
     private final TextField input;
     private Table promptRow;
+
     private static final DateTimeFormatter FMT = DateTimeFormatter.ofPattern("HH:mm:ss");
 
-    public TerminalWindow(Skin skin, WindowManager manager) {
+    public TerminalWindow(Skin skin, WindowManager manager, FileSystemSim fs) {
         super("Terminal", skin, WindowManager.AppType.TERMINAL, manager);
         this.manager = manager;
-        this.skin    = skin;
-        ensureBlackDrawable();
+        this.fs = fs;
+        this.skin = skin;
+        ensureBlack();
         ensureStyles();
 
-        /* estilo de la ventana: fondo negro sólido */
-        WindowStyle plain = new WindowStyle(skin.get(WindowStyle.class));
-        plain.background = skin.getDrawable("black");
-        setStyle(plain);
+        WindowStyle ws = new WindowStyle(skin.get(WindowStyle.class));
+        ws.background = skin.getDrawable("black");
+        setStyle(ws);
 
         terminal = new Table();
         terminal.top().defaults().align(Align.left).padLeft(2f);
         terminal.setBackground(skin.getDrawable("black"));
 
-        ScrollPane.ScrollPaneStyle spStyle = new ScrollPane.ScrollPaneStyle();
-        spStyle.background = skin.getDrawable("black");
-        scroll = new ScrollPane(terminal, spStyle);
+        ScrollPane.ScrollPaneStyle sps = new ScrollPane.ScrollPaneStyle();
+        sps.background = skin.getDrawable("black");
+        scroll = new ScrollPane(terminal, sps);
         scroll.setFadeScrollBars(false);
         scroll.setScrollingDisabled(true, false);
 
         input = new TextField("", skin, "terminal-field");
-        input.setFocusTraversal(false);
         input.setTextFieldListener((tf, c) -> {
             if (c == '\n' || c == '\r') {
                 String cmd = tf.getText().trim();
                 tf.setText("");
-                if (!cmd.isEmpty()) execute(cmd);
+                if (!cmd.isEmpty()) exec(cmd);
             }
         });
 
         defaults().pad(4f);
-        add(scroll).prefWidth(480).prefHeight(240).grow();
-        addPrompt();
+        add(scroll).prefWidth(500).prefHeight(280).grow();
+        newPrompt();
         pack();
-        setPosition(120, 140);
+        setPosition(100, 120);
     }
 
-    /* registra un drawable negro una sola vez en el skin */
-    private void ensureBlackDrawable() {
+    /* ---------- helpers gráficos ---------- */
+    private void ensureBlack() {
         if (!skin.has("black", Drawable.class)) {
             Pixmap pm = new Pixmap(1, 1, Pixmap.Format.RGBA8888);
             pm.setColor(Color.BLACK);
@@ -87,18 +87,34 @@ public final class TerminalWindow extends BaseWindow {
         }
     }
 
-    private void addPrompt() {
+    /* ---------- prompt & output ---------- */
+    private String promptText() {
+        return fs.pwd() + ">";
+    }
+
+    private void newPrompt() {
         promptRow = new Table();
-        promptRow.add(new Label("$", skin, "terminal-label")).padRight(4f);
+        promptRow.add(new Label(promptText(), skin, "terminal-label")).padRight(2f);
         promptRow.add(input).growX();
         terminal.add(promptRow).growX().row();
         scrollToEnd();
         if (getStage() != null) getStage().setKeyboardFocus(input);
     }
 
-    private void writeLine(String txt) {
+    private void writeln(String txt) {
         terminal.add(new Label(txt, skin, "terminal-label")).growX().row();
         scrollToEnd();
+    }
+
+    private void listTree(FileSystemSim fsim, String indent) {
+        for (String item : fsim.ls()) {
+            writeln(indent + item);
+            if (item.endsWith("/")) {
+                fsim.cd(item.substring(0, item.length() - 1));
+                listTree(fsim, indent + "  ");
+                fsim.cd("..");
+            }
+        }
     }
 
     private void scrollToEnd() {
@@ -106,33 +122,140 @@ public final class TerminalWindow extends BaseWindow {
         scroll.setScrollPercentY(100);
     }
 
-    private void execute(String line) {
+    /* ---------- comandos ---------- */
+    private void exec(String line) { // todo--> habrá que revisar el output de algunos comandos para que se maneje en base a los inputs del usuario (nombre usuario, nombre sistema, etc)
         promptRow.clearChildren();
-        promptRow.add(new Label("$ " + line, skin, "terminal-label")).growX();
+        promptRow.add(new Label(promptText() + " " + line, skin, "terminal-label")).growX();
 
-        String[] parts = line.split(" ", 2);
-        String cmd = parts[0];
-        String arg = parts.length > 1 ? parts[1] : "";
+        String[] p = line.split("\\s+", 2);
+        String cmd = p[0];
+        String arg = (p.length > 1) ? p[1] : "";
 
         switch (cmd) {
             case "help":
-                writeLine("Commands: help, echo, time, clear, exit");
+                writeln("Builtin commands:");
+                writeln("  dir | ls        list directory");
+                writeln("  cd <dir>        change directory");
+                writeln("  pwd             print working dir");
+                writeln("  tree            recursive listing");
+                writeln("  mkdir <dir>     create directory");
+                writeln("  touch <file>    create empty file");
+                writeln("  cat <file>      show file contents");
+                writeln("  du              disk usage summary");
+                writeln("  df -h           filesystem usage");
+                writeln("");
+                writeln("System / info:");
+                writeln("  whoami          current user");
+                writeln("  hostname        machine name");
+                writeln("  ver             OS version");
+                writeln("  uname -a        kernel string");
+                writeln("");
+                writeln("Network (mock):");
+                writeln("  ip -c a         show addresses");
+                writeln("  ifconfig        legacy addr info");
+                writeln("  ping <host>     fake ping");
+                writeln("  tracert <host>  fake traceroute");
+                writeln("");
+                writeln("Utilities:");
+                writeln("  time            current time");
+                writeln("  clear | cls     clear screen");
+                writeln("  exit            close terminal");
+                writeln("  help            this message");
                 break;
-            case "echo":
-                writeLine(arg);
+
+            case "dir":
+            case "ls":
+                writeln(String.join("  ", fs.ls()));
                 break;
+
+            case "cd":
+                if (arg.isEmpty()) writeln("usage: cd <dir>");
+                else if (!fs.cd(arg)) writeln("cd: no such dir: " + arg);
+                break;
+
+            case "pwd":
+                writeln(fs.pwd());
+                break;
+
+            case "mkdir":
+                if (arg.isEmpty()) writeln("usage: mkdir <dir>");
+                else if (!fs.mkdir(arg)) writeln("mkdir: cannot create '" + arg + "': exists");
+                break;
+
+            case "touch":
+                if (arg.isEmpty()) writeln("usage: touch <filename>");
+                else fs.touch(arg);
+                break;
+
+            case "cat":
+                if (arg.isEmpty()) writeln("usage: cat <file>");
+                else {
+                    String txt = fs.cat(arg);
+                    if (txt == null) writeln("cat: file not found: " + arg);
+                    else writeln(txt);
+                }
+                break;
+
             case "time":
-                writeLine(LocalTime.now().format(FMT));
+                writeln(java.time.LocalTime.now().format(FMT));
                 break;
+
             case "clear":
+            case "cls":
                 terminal.clearChildren();
                 break;
+
             case "exit":
                 manager.close(WindowManager.AppType.TERMINAL);
                 return;
+
+            case "whoami":
+                writeln("david");
+                break;
+            case "hostname":
+                writeln("NEMESYS-PC");
+                break;
+            case "ver":
+                writeln("NEMESYS OS version 0.3 (Win-95 theme)");
+                break;
+            case "uname":
+                if ("-a".equals(arg)) writeln("NEMESYS 0.3 i586 (bogus)");
+                break;
+
+            case "ip":
+                writeln("eth0:  inet 192.168.0.42/24  brd 192.168.0.255  ...");
+                break;
+            case "ifconfig":
+                writeln("eth0      Link encap:Ethernet  HWaddr 00:0A:E6:3E:FD:E1");
+                writeln("          inet addr:192.168.0.42  Bcast:192.168.0.255  Mask:255.255.255.0");
+                break;
+            case "ping":
+                writeln("Pinging " + arg + " with 32 bytes of data:");
+                writeln("Reply from " + arg + ": bytes=32 time=31ms TTL=57");
+                writeln("Reply from " + arg + ": bytes=32 time=30ms TTL=57");
+                break;
+            case "tracert":
+                writeln("Tracing route to " + arg + " over a maximum of 30 hops");
+                writeln("  1  <1 ms  1 ms  1 ms  192.168.0.1");
+                writeln("  2  20 ms 19 ms 20 ms  isp-gateway.net");
+                writeln("  3  31 ms 30 ms 29 ms  " + arg);
+                break;
+            case "df":
+                writeln("Filesystem   Size  Used Avail Use% Mounted on");
+                writeln("C:           512M  412M  100M  81% /");
+                break;
+            case "du":
+                writeln("24K .\\users\\david\\docs");
+                writeln("12K .\\users\\david\\pictures");
+                break;
+            case "tree":
+                listTree(fs, "");   // helper que recorre FileSystemSim
+                break;
+
+
             default:
-                writeLine("Unknown command: " + cmd);
+                writeln("Unknown command: " + cmd);
         }
-        addPrompt();
+        newPrompt();
     }
 }

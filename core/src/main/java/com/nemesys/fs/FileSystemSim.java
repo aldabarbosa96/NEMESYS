@@ -5,18 +5,28 @@ import java.util.stream.Collectors;
 
 public final class FileSystemSim {
 
-    private final Directory root = buildSampleTree();
-    private Directory cwd = root.sub("users");
+    private static final Directory ROOT = buildSampleTree();
+    private Directory cwd = ROOT.sub("users");
     private final String drive = "C:";
 
     /* public API */
     public List<String> ls() {
-        return cwd.getDirs().stream().map(d -> d.name + "/").collect(Collectors.toList()).stream().sorted().collect(Collectors.toList());
+        List<String> out = new java.util.ArrayList<>();
+
+        // carpetas primero, con “/”
+        out.addAll(cwd.getDirs().stream().map(d -> d.name + "/").collect(Collectors.toList()));
+
+        // luego archivos
+        out.addAll(cwd.getFiles().stream().map(VirtualFile::toString).collect(Collectors.toList()));
+
+        java.util.Collections.sort(out);
+        return out;
     }
 
+
     public boolean cd(String path) {
-        if (path.equals("..") && cwd != root) {       // subir
-            cwd = findParent(root, cwd);
+        if (path.equals("..") && cwd != ROOT) {       // subir
+            cwd = findParent(ROOT, cwd);
             return true;
         }
         Directory d = cwd.sub(path);
@@ -27,7 +37,9 @@ public final class FileSystemSim {
         return false;
     }
 
-    public void toRoot() { cwd = root; }
+    public void toRoot() {
+        cwd = ROOT;
+    }
 
     public String cat(String fileName) {
         VirtualFile f = cwd.file(fileName);
@@ -35,16 +47,40 @@ public final class FileSystemSim {
     }
 
     public String pwd() {
-        String rel = getPath(root, cwd, "");
+        String rel = getPath(ROOT, cwd, "");
         if (rel.equals("/")) rel = "";      // raíz → cadena vacía
         return drive + rel.replace("/", "\\");  // convierte / en \
     }
 
+    /* crea subdirectorio si no existe */
+    public boolean mkdir(String name) {
+        if (cwd.sub(name) != null) return false;   // ya existe
+        cwd.dir(name);
+        return true;
+    }
+
+    /* crea archivo de texto vacío o sobre-escribe */
+    public void touch(String fullName) {
+        String name = fullName;
+        String ext = "txt";
+
+        int dot = fullName.lastIndexOf('.');
+        if (dot > 0 && dot < fullName.length() - 1) {   // hay extensión
+            name = fullName.substring(0, dot);
+            ext = fullName.substring(dot + 1);
+        }
+        cwd.file(name, ext, "");
+    }
+
+
     /* helpers ----------------------------------------------------------------*/
+    /* busca el padre real de target dentro del árbol ------------------------- */
     private static Directory findParent(Directory current, Directory target) {
-        if (current.getDirs().contains(target)) return current;
-        for (Directory d : current.getDirs())
-            if (findParent(d, target) != null) return d;
+        if (current.getDirs().contains(target)) return current;   // caso base
+        for (Directory d : current.getDirs()) {
+            Directory res = findParent(d, target);
+            if (res != null) return res;
+        }
         return null;
     }
 
@@ -54,7 +90,7 @@ public final class FileSystemSim {
         return getPath(base, parent, dir.name + "/" + acc);
     }
 
-    private Directory buildSampleTree() {
+    private static Directory buildSampleTree() {
         Directory root = new Directory("");
         Directory david = root.dir("users").dir("david");
         david.dir("docs").file("README", "txt", "Bienvenido a NEMESYS.");

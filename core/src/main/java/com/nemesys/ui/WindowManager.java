@@ -19,6 +19,9 @@ public final class WindowManager {
     private final Map<AppType, BaseWindow> open = new HashMap<>();
     private final Map<AppType, TextButton> buttons = new HashMap<>();
 
+    /* ——— instancia única del sistema de archivos ——— */
+    private final FileSystemSim fs = new FileSystemSim();
+
     public WindowManager(Stage stage, Skin skin, Table buttonBar) {
         this.stage = stage;
         this.skin = skin;
@@ -36,7 +39,7 @@ public final class WindowManager {
         stage.addActor(w);
         open.put(type, w);
 
-        TextButton b = new TextButton(w.getWindowTitle(), skin);  // <- corregido
+        TextButton b = new TextButton(w.getWindowTitle(), skin);
         b.addListener(e -> {
             if (e.toString().equals("touchDown")) {
                 BaseWindow win = open.get(type);
@@ -59,14 +62,22 @@ public final class WindowManager {
         if (b != null) b.remove();
     }
 
+    /* fábrica --------------------------------------------------------------- */
     private BaseWindow create(AppType type) {
+        BaseWindow win;
+
         switch (type) {
             case TERMINAL:
-                return new TerminalWindow(skin, this);
+                win = new TerminalWindow(skin, this, new FileSystemSim());
+                break;
+
             case FILE_EXPLORER:
-                return new FileExplorerWindow(skin, this, new FileSystemSim());
+                win = new FileExplorerWindow(skin, this, new FileSystemSim());
+                break;
+
             default:
-                return null;
+                win = null;      // nunca debería ocurrir
         }
+        return win;
     }
 }
