@@ -3,6 +3,7 @@ package com.nemesys.screens;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.GL20;
+import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.Image;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
@@ -14,6 +15,7 @@ import com.badlogic.gdx.utils.Scaling;
 import com.badlogic.gdx.utils.viewport.ScreenViewport;
 import com.nemesys.NemesysGame;
 import com.nemesys.ui.StartMenu;
+import com.nemesys.ui.UIStyles;
 import com.nemesys.ui.WindowManager;
 
 import java.time.LocalTime;
@@ -34,13 +36,13 @@ public final class DesktopScreen implements Screen {
     public DesktopScreen(NemesysGame g) {
         game = g;
         stage = new Stage(new ScreenViewport(), g.batch);
-        skin = new Skin(Gdx.files.internal("ui/uiskin.json"));
+        skin = UIStyles.create();
 
-        Image bg = new Image(skin.getDrawable("default-rect"));
+        Texture wall = new Texture(Gdx.files.internal("wallpaper1.png"));
+        Image bg = new Image(wall);
         bg.setFillParent(true);
         bg.setScaling(Scaling.stretch);
         stage.addActor(bg);
-
 
         clock = new Label("", skin);
         Table taskButtons = buildTaskbar();
@@ -62,7 +64,7 @@ public final class DesktopScreen implements Screen {
         stage.addActor(root);
 
         Table bar = new Table(skin);
-        bar.setBackground("default-round");
+        bar.setBackground("taskbar");
         bar.getBackground().setMinHeight(BAR_H);
 
         TextButton startBtn = new TextButton("Start", skin);

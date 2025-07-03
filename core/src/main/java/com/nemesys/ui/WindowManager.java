@@ -4,13 +4,14 @@ import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
+import com.nemesys.fs.FileSystemSim;
 
 import java.util.HashMap;
 import java.util.Map;
 
 public final class WindowManager {
 
-    public enum AppType { TERMINAL }
+    public enum AppType {TERMINAL, FILE_EXPLORER}
 
     private final Stage stage;
     private final Skin skin;
@@ -40,7 +41,10 @@ public final class WindowManager {
             if (e.toString().equals("touchDown")) {
                 BaseWindow win = open.get(type);
                 if (win.isVisible()) win.setVisible(false);
-                else { win.setVisible(true); win.toFront(); }
+                else {
+                    win.setVisible(true);
+                    win.toFront();
+                }
             }
             return true;
         });
@@ -57,8 +61,12 @@ public final class WindowManager {
 
     private BaseWindow create(AppType type) {
         switch (type) {
-            case TERMINAL: return new TerminalWindow(skin, this);
-            default: return null;
+            case TERMINAL:
+                return new TerminalWindow(skin, this);
+            case FILE_EXPLORER:
+                return new FileExplorerWindow(skin, this, new FileSystemSim());
+            default:
+                return null;
         }
     }
 }

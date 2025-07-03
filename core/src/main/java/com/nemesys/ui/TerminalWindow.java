@@ -1,4 +1,3 @@
-// core/src/main/java/com/nemesys/ui/TerminalWindow.java
 package com.nemesys.ui;
 
 import com.badlogic.gdx.graphics.Color;

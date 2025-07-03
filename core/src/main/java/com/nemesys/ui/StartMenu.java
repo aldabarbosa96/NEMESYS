@@ -10,7 +10,7 @@ public final class StartMenu extends Table {
 
     public StartMenu(Skin skin, Consumer<WindowManager.AppType> launcher) {
         super(skin);
-        setBackground("default-round");
+        setBackground("taskbar");
         pad(6f);
         defaults().pad(2f).fillX();
         TextButton terminal = new TextButton("Terminal", skin);
@@ -21,6 +21,17 @@ public final class StartMenu extends Table {
             }
             return true;
         });
+
+        TextButton explorerBtn = new TextButton("Explorador", skin);
+        explorerBtn.addListener(e -> {
+            if (e.toString().equals("touchDown")) {
+                launcher.accept(WindowManager.AppType.FILE_EXPLORER);
+                setVisible(false);
+            }
+            return true;
+        });
+
+        add(explorerBtn).row();
         add(terminal).row();
         pack();
     }
