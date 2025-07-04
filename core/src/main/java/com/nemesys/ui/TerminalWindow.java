@@ -123,14 +123,37 @@ public final class TerminalWindow extends BaseWindow {
     }
 
     /* ---------- comandos ---------- */
-    private void exec(String line) { // todo--> habrá que revisar el output de algunos comandos para que se maneje en base a los inputs del usuario (nombre usuario, nombre sistema, etc)
+    private void exec(String line) {
+        /* pinta la línea que el usuario acaba de escribir */
         promptRow.clearChildren();
         promptRow.add(new Label(promptText() + " " + line, skin, "terminal-label")).growX();
 
-        String[] p = line.split("\\s+", 2);
-        String cmd = p[0];
-        String arg = (p.length > 1) ? p[1] : "";
+        /* parseo simple: comando + resto como argumento único */
+        String[] parts = line.trim().split("\\s+", 2);
+        if (parts.length == 0) {
+            newPrompt();
+            return;
+        }
 
+        String cmd = parts[0];
+        String arg = (parts.length > 1) ? parts[1] : "";
+
+        /* ------------------------------------------------------------------ */
+        /* 1 ─ Comandos que tocan el FS  →  delegados a FileSystemSim.run()   */
+        /* ------------------------------------------------------------------ */
+        final String[] fsCmds = {"ls", "dir", "cd", "pwd", "mkdir", "touch", "cat", "tree", "du", "df"};
+        if (java.util.Arrays.asList(fsCmds).contains(cmd)) {
+            String result = fs.run(cmd, arg);     // null = éxito sin salida
+            if (result != null && !result.isEmpty()) {
+                for (String ln : result.split("\n")) writeln(ln);
+            }
+            newPrompt();
+            return;
+        }
+
+        /* ------------------------------------------------------------------ */
+        /* 2 ─ Comandos “mock” que solo imprimen texto o afectan a la UI      */
+        /* ------------------------------------------------------------------ */
         switch (cmd) {
             case "help":
                 writeln("Builtin commands:");
@@ -142,7 +165,7 @@ public final class TerminalWindow extends BaseWindow {
                 writeln("  touch <file>    create empty file");
                 writeln("  cat <file>      show file contents");
                 writeln("  du              disk usage summary");
-                writeln("  df -h           filesystem usage");
+                writeln("  df              filesystem usage");
                 writeln("");
                 writeln("System / info:");
                 writeln("  whoami          current user");
@@ -163,39 +186,7 @@ public final class TerminalWindow extends BaseWindow {
                 writeln("  help            this message");
                 break;
 
-            case "dir":
-            case "ls":
-                writeln(String.join("  ", fs.ls()));
-                break;
-
-            case "cd":
-                if (arg.isEmpty()) writeln("usage: cd <dir>");
-                else if (!fs.cd(arg)) writeln("cd: no such dir: " + arg);
-                break;
-
-            case "pwd":
-                writeln(fs.pwd());
-                break;
-
-            case "mkdir":
-                if (arg.isEmpty()) writeln("usage: mkdir <dir>");
-                else if (!fs.mkdir(arg)) writeln("mkdir: cannot create '" + arg + "': exists");
-                break;
-
-            case "touch":
-                if (arg.isEmpty()) writeln("usage: touch <filename>");
-                else fs.touch(arg);
-                break;
-
-            case "cat":
-                if (arg.isEmpty()) writeln("usage: cat <file>");
-                else {
-                    String txt = fs.cat(arg);
-                    if (txt == null) writeln("cat: file not found: " + arg);
-                    else writeln(txt);
-                }
-                break;
-
+            /* utilidades ---------------------------------------------------- */
             case "time":
                 writeln(java.time.LocalTime.now().format(FMT));
                 break;
@@ -209,6 +200,7 @@ public final class TerminalWindow extends BaseWindow {
                 manager.close(WindowManager.AppType.TERMINAL);
                 return;
 
+            /* información sistema ------------------------------------------- */
             case "whoami":
                 writeln("david");
                 break;
@@ -216,18 +208,20 @@ public final class TerminalWindow extends BaseWindow {
                 writeln("NEMESYS-PC");
                 break;
             case "ver":
-                writeln("NEMESYS OS version 0.3 (Win-95 theme)");
+                writeln("NEMESYS OS version 0.3 (1996)");
                 break;
             case "uname":
                 if ("-a".equals(arg)) writeln("NEMESYS 0.3 i586 (bogus)");
+                else writeln("usage: uname -a");
                 break;
 
+            /* network mocks -------------------------------------------------- */
             case "ip":
                 writeln("eth0:  inet 192.168.0.42/24  brd 192.168.0.255  ...");
                 break;
             case "ifconfig":
                 writeln("eth0      Link encap:Ethernet  HWaddr 00:0A:E6:3E:FD:E1");
-                writeln("          inet addr:192.168.0.42  Bcast:192.168.0.255  Mask:255.255.255.0");
+                writeln("          inet addr:192.168.0.42  Mask:255.255.255.0");
                 break;
             case "ping":
                 writeln("Pinging " + arg + " with 32 bytes of data:");
@@ -240,22 +234,20 @@ public final class TerminalWindow extends BaseWindow {
                 writeln("  2  20 ms 19 ms 20 ms  isp-gateway.net");
                 writeln("  3  31 ms 30 ms 29 ms  " + arg);
                 break;
-            case "df":
-                writeln("Filesystem   Size  Used Avail Use% Mounted on");
-                writeln("C:           512M  412M  100M  81% /");
-                break;
-            case "du":
-                writeln("24K .\\users\\david\\docs");
-                writeln("12K .\\users\\david\\pictures");
-                break;
-            case "tree":
-                listTree(fs, "");   // helper que recorre FileSystemSim
-                break;
 
+            case "nano":
+                if (arg.isEmpty()) {
+                    writeln("usage: nano <file>");
+                } else {
+                    manager.openEditor(arg, fs);
+                }
+                break;
 
             default:
                 writeln("Unknown command: " + cmd);
         }
+
         newPrompt();
     }
+
 }

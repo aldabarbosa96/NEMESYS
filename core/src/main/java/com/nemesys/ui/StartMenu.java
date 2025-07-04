@@ -31,8 +31,18 @@ public final class StartMenu extends Table {
             return true;
         });
 
+        TextButton editorBtn = new TextButton("Editor", skin);
+        editorBtn.addListener(e -> {
+            if (e.toString().equals("touchDown")) {
+                launcher.accept(WindowManager.AppType.TEXT_EDITOR);
+                setVisible(false);
+            }
+            return true;
+        });
+
         add(explorerBtn).row();
         add(terminal).row();
+        add(editorBtn).row();
         pack();
     }
 }

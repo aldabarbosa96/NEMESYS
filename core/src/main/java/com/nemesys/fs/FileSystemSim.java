@@ -98,4 +98,80 @@ public final class FileSystemSim {
         root.dir("system").dir("logs").file("boot", "log", "Boot OK.");
         return root;
     }
+
+    public String run(String cmd, String arg) {
+        switch (cmd) {
+            case "dir":
+            case "ls":
+                return String.join("  ", ls());
+
+            case "cd":
+                if (arg.isEmpty()) return "usage: cd <dir>";
+                return cd(arg) ? null : "cd: no such dir: " + arg;
+
+            case "pwd":
+                return pwd();
+
+            case "mkdir":
+                if (arg.isEmpty()) return "usage: mkdir <dir>";
+                return mkdir(arg) ? null : "mkdir: cannot create '" + arg + "': exists";
+
+            case "touch":
+                if (arg.isEmpty()) return "usage: touch <filename>";
+                touch(arg);
+                return null;
+
+            case "cat":
+                if (arg.isEmpty()) return "usage: cat <file>";
+                String txt = cat(arg);
+                return (txt == null) ? "cat: file not found: " + arg : txt;
+
+            case "du":
+                return "24K .\\users\\david\\docs\n12K .\\users\\david\\pictures"; // stub
+
+            case "df":
+                return "Filesystem   Size  Used Avail Use% Mounted on\n" + "C:           512M  412M  100M  81% /"; // stub
+
+            case "tree":
+                return buildTree("");
+        }
+        return null;
+    }
+
+    private String buildTree(String indent) {
+        StringBuilder sb = new StringBuilder();
+        for (String item : ls()) {
+            sb.append(indent).append(item).append('\n');
+            if (item.endsWith("/")) {
+                cd(item.substring(0, item.length() - 1));
+                sb.append(buildTree(indent + "  "));
+                cd("..");
+            }
+        }
+        return sb.toString();
+    }
+
+    /* sobre-escribe o crea un archivo de texto */
+    public void overwrite(String fullPath, String content) {
+        int slash = Math.max(fullPath.lastIndexOf('/'), fullPath.lastIndexOf('\\'));
+        String dir = (slash >= 0) ? fullPath.substring(0, slash) : "";
+        String file = (slash >= 0) ? fullPath.substring(slash + 1) : fullPath;
+
+        Directory saveCwd = cwd;          // recuerda dónde estabas
+        if (!dir.isEmpty()) {             // navega a dir destino
+            String[] parts = dir.split("[/\\\\]");
+            for (String p : parts) {
+                if (p.isEmpty()) continue;
+                cwd = cwd.dir(p);          // crea subdir si falta
+            }
+        }
+
+        /* nombre + ext */
+        int dot = file.lastIndexOf('.');
+        String n = (dot > 0) ? file.substring(0, dot) : file;
+        String e = (dot > 0) ? file.substring(dot + 1) : "txt";
+        cwd.file(n, e, content);
+
+        cwd = saveCwd;     // vuelve a cwd original
+    }
 }

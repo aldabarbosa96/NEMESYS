@@ -11,7 +11,7 @@ import java.util.Map;
 
 public final class WindowManager {
 
-    public enum AppType {TERMINAL, FILE_EXPLORER}
+    public enum AppType {TERMINAL, FILE_EXPLORER, TEXT_EDITOR}
 
     private final Stage stage;
     private final Skin skin;
@@ -28,14 +28,13 @@ public final class WindowManager {
         this.buttonBar = buttonBar;
     }
 
-    public void open(AppType type) {
-        if (open.containsKey(type)) {
+    public void open(AppType type, String filePath) {
+        if (open.containsKey(type) && type != AppType.TEXT_EDITOR) {   // varios editores permitidos
             BaseWindow w = open.get(type);
-            w.setVisible(true);
-            w.toFront();
+            w.setVisible(true); w.toFront();
             return;
         }
-        BaseWindow w = create(type);
+        BaseWindow w = create(type, filePath);
         stage.addActor(w);
         open.put(type, w);
 
@@ -63,21 +62,29 @@ public final class WindowManager {
     }
 
     /* fábrica --------------------------------------------------------------- */
-    private BaseWindow create(AppType type) {
-        BaseWindow win;
-
+    private BaseWindow create(AppType type, String... param) {
         switch (type) {
             case TERMINAL:
-                win = new TerminalWindow(skin, this, new FileSystemSim());
-                break;
+                return new TerminalWindow(skin, this, new FileSystemSim());
 
             case FILE_EXPLORER:
-                win = new FileExplorerWindow(skin, this, new FileSystemSim());
-                break;
+                return new FileExplorerWindow(skin, this, new FileSystemSim());
 
-            default:
-                win = null;      // nunca debería ocurrir
+            /* 2️⃣  Editor ------------------------------------------------- */
+            case TEXT_EDITOR:
+                String file = (param.length > 0) ? param[0] : null;  // null → documento en blanco
+                return new TextEditorWindow(skin, this, new FileSystemSim(), file);
         }
-        return win;
+        throw new IllegalArgumentException("Tipo no soportado: " + type);
     }
+
+    public void open(AppType type) { open(type, ""); }
+
+
+    /* Helper específico para el comando nano ----------------------------- */
+    public void openEditor(String filePath, FileSystemSim fsRef) {
+        TextEditorWindow w = new TextEditorWindow(skin, this, fsRef, filePath);
+        stage.addActor(w);
+    }
+
 }
