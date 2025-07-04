@@ -1,4 +1,3 @@
-// core/src/main/java/com/nemesys/ui/FileExplorerWindow.java
 package com.nemesys.ui;
 
 import com.badlogic.gdx.Input;
@@ -9,38 +8,28 @@ import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.badlogic.gdx.utils.Align;
 import com.nemesys.fs.FileSystemSim;
 
+import java.util.List;
+
 public final class FileExplorerWindow extends BaseWindow {
 
     private final WindowManager manager;
     private final FileSystemSim fs;
     private final Skin skin;
-    private final List<String> list;
+    private final com.badlogic.gdx.scenes.scene2d.ui.List<String> list;
     private final Label pathLabel;
 
     public FileExplorerWindow(Skin skin, WindowManager manager, FileSystemSim fs) {
         super("File Explorer", skin, WindowManager.AppType.FILE_EXPLORER, manager);
         this.manager = manager;
-        this.skin = skin;
         this.fs = fs;
+        this.skin = skin;
 
         pathLabel = new Label(fs.pwd(), skin);
-        list = new List<>(skin);
+        list = new com.badlogic.gdx.scenes.scene2d.ui.List<>(skin);
         list.setAlignment(Align.left);
         refreshList();
 
-        // Click derecho → menú contextual
-        list.addListener(new ClickListener() {
-            @Override
-            public boolean touchDown(InputEvent event, float x, float y, int pointer, int button) {
-                if (button == Input.Buttons.RIGHT && list.getSelected() != null) {
-                    showContextMenu(list.getSelected(), event.getStageX(), event.getStageY());
-                    return true;
-                }
-                return super.touchDown(event, x, y, pointer, button);
-            }
-        });
-
-        // Doble-clic para entrar en carpetas
+        // Doble clic: abrir carpeta o archivo
         list.addListener(new ClickListener() {
             @Override
             public void clicked(InputEvent ev, float x, float y) {
@@ -49,8 +38,22 @@ public final class FileExplorerWindow extends BaseWindow {
                     if (sel.endsWith("/")) {
                         fs.cd(sel.substring(0, sel.length() - 1));
                         refreshList();
+                    } else {
+                        manager.openEditor(sel, fs);
                     }
                 }
+            }
+        });
+
+        // Clic derecho: menú contextual (Abrir + Eliminar)
+        list.addListener(new ClickListener() {
+            @Override
+            public boolean touchDown(InputEvent event, float x, float y, int pointer, int button) {
+                if (button == Input.Buttons.RIGHT && list.getSelected() != null) {
+                    showContextMenu(list.getSelected(), event.getStageX(), event.getStageY());
+                    return true;
+                }
+                return super.touchDown(event, x, y, pointer, button);
             }
         });
 
@@ -91,7 +94,8 @@ public final class FileExplorerWindow extends BaseWindow {
 
     private void refreshList() {
         pathLabel.setText(fs.pwd());
-        list.setItems(fs.ls().toArray(new String[0]));
+        List<String> items = fs.ls();
+        list.setItems(items.toArray(new String[0]));
     }
 
     private void showContextMenu(String sel, float stageX, float stageY) {
@@ -100,6 +104,20 @@ public final class FileExplorerWindow extends BaseWindow {
         menu.setResizable(false);
         menu.defaults().pad(4f);
 
+        // "Abrir" solo para archivos
+        if (!sel.endsWith("/")) {
+            TextButton open = new TextButton("Abrir", getSkin());
+            open.addListener(new ClickListener() {
+                @Override
+                public void clicked(InputEvent e, float x, float y) {
+                    manager.openEditor(sel, fs);
+                    menu.remove();
+                }
+            });
+            menu.add(open).row();
+        }
+
+        // "Eliminar"
         TextButton delete = new TextButton("Eliminar", getSkin());
         delete.addListener(new ClickListener() {
             @Override
@@ -109,15 +127,20 @@ public final class FileExplorerWindow extends BaseWindow {
                 menu.remove();
             }
         });
-
         menu.add(delete).row();
+
         menu.pack();
 
+        // Ajusta posición para que no salga fuera de la ventana
         float x = stageX;
         float y = stageY - menu.getHeight();
         Stage stage = getStage();
-        if (x + menu.getWidth() > stage.getWidth()) x = stage.getWidth() - menu.getWidth();
-        if (y < 0) y = 0;
+        if (x + menu.getWidth() > stage.getWidth()) {
+            x = stage.getWidth() - menu.getWidth();
+        }
+        if (y < 0) {
+            y = 0;
+        }
         menu.setPosition(x, y);
         stage.addActor(menu);
     }
