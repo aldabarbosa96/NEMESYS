@@ -2,15 +2,16 @@ package com.nemesys.ui;
 
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.*;
+import com.badlogic.gdx.scenes.scene2d.utils.Drawable;
 import com.badlogic.gdx.utils.Align;
 import com.nemesys.fs.FileSystemSim;
 
 import java.util.function.Consumer;
 
-/**
- * Diálogo “Save As…” con cabecera Win-95.
- */
 public final class SaveDialog extends Window {
+
+    private static final float FRAME = 3f;
+    private static final float BAR = 30f;
 
     private final FileSystemSim fs;
     private final Label pathLabel;
@@ -23,12 +24,28 @@ public final class SaveDialog extends Window {
         this.fs = fs;
         this.onSave = onSave;
 
-        /* ────── CABECERA AZUL Win-95 ────── */
-        getTitleTable().setBackground(skin.getDrawable("title"));
-        getTitleTable().padLeft(6f).padRight(6f);
-        getTitleLabel().setStyle(skin.get("title-label", Label.LabelStyle.class));
-        getTitleLabel().setAlignment(Align.left);
-        padTop(24f);                     // ← ¡lo que faltaba!
+        // —— Cabecera idéntica a BaseWindow ——
+        pad(FRAME);
+        padTop(FRAME + BAR);
+
+        Table titleTable = getTitleTable();
+        titleTable.clearChildren();
+        titleTable.pad(0);
+        titleTable.setBackground((Drawable) null);
+
+        Table bar = new Table();
+        bar.setBackground(skin.getDrawable("title"));
+
+        Label titleLbl = getTitleLabel();
+        titleLbl.setStyle(skin.get("title-label", Label.LabelStyle.class));
+        titleLbl.setAlignment(Align.left);
+
+        // sólo el título, sin minimizer, sin close (Cancel está abajo)
+        bar.add(titleLbl).expandX().left().padLeft(8f);
+
+        titleTable.add(bar).expand().fillX().padTop(FRAME).height(BAR);
+        // ————————————————
+
         setMovable(true);
         setKeepWithinStage(true);
 
@@ -36,28 +53,26 @@ public final class SaveDialog extends Window {
         defaults().pad(4f).align(Align.left);
 
         /* nav ↑ / home + ruta actual */
-        ImageButton upBtn   = new ImageButton(skin, "nav-back");
+        ImageButton upBtn = new ImageButton(skin, "nav-back");
         ImageButton homeBtn = new ImageButton(skin, "nav-home");
         pathLabel = new Label(fs.pwd(), skin);
 
         Table nav = new Table();
-        nav.add(upBtn)  .size(24).padRight(4);
+        nav.add(upBtn).size(24).padRight(4);
         nav.add(homeBtn).size(24).padRight(8);
         nav.add(pathLabel).growX();
         add(nav).growX().row();
 
         /* lista directorios */
         list = new List<>(skin);
-        list.setItems(fs.ls().stream()
-            .filter(s -> s.endsWith("/"))
-            .toArray(String[]::new));
+        list.setItems(fs.ls().stream().filter(s -> s.endsWith("/")).toArray(String[]::new));
         ScrollPane scroll = new ScrollPane(list, skin);
         scroll.setFadeScrollBars(false);
         add(scroll).prefWidth(400).prefHeight(240).grow().row();
 
         /* nombre + botones */
         nameField = new TextField("", skin);
-        TextButton save   = new TextButton("Save",   skin);
+        TextButton save = new TextButton("Save", skin);
         TextButton cancel = new TextButton("Cancel", skin);
 
         Table bottom = new Table();
@@ -75,7 +90,10 @@ public final class SaveDialog extends Window {
             return true;
         });
         homeBtn.addListener(e -> {
-            if (e.toString().equals("touchDown")) { fs.toRoot(); refresh(); }
+            if (e.toString().equals("touchDown")) {
+                fs.toRoot();
+                refresh();
+            }
             return true;
         });
         list.addListener(e -> {
@@ -101,21 +119,22 @@ public final class SaveDialog extends Window {
         });
     }
 
-    /* actualiza ruta y lista */
+    /**
+     * actualiza ruta y lista
+     */
     private void refresh() {
         pathLabel.setText(fs.pwd());
-        list.setItems(fs.ls().stream()
-            .filter(s -> s.endsWith("/"))
-            .toArray(String[]::new));
+        list.setItems(fs.ls().stream().filter(s -> s.endsWith("/")).toArray(String[]::new));
     }
 
-    /* centra al añadirse al Stage */
+    /**
+     * centra al añadirse al Stage
+     */
     @Override
     public void setStage(Stage stage) {
         super.setStage(stage);
         if (stage != null) {
-            setPosition((stage.getWidth()  - getWidth())  / 2f,
-                (stage.getHeight() - getHeight()) / 2f);
+            setPosition((stage.getWidth() - getWidth()) / 2f, (stage.getHeight() - getHeight()) / 2f);
         }
     }
 }

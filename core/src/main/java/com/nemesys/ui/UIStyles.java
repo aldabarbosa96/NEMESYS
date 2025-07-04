@@ -20,8 +20,8 @@ import com.badlogic.gdx.scenes.scene2d.ui.ImageButton.ImageButtonStyle;
  * Skin Win-95 pixel-perfect para NEMESYS.
  * - estilo "default" para TextButton,
  * - "terminal-label" en verde,
- * - ImageButtonStyle "trash" para el icono de la papelera SIN FONDO,
- * con tamaño 48×48.
+ * - iconos estándar 24×24,
+ * - icono "trash" sin fondo 48×48.
  */
 public final class UIStyles {
 
@@ -59,16 +59,13 @@ public final class UIStyles {
         sk.add("title", sk.getDrawable("blue"), Drawable.class);
 
         // ── Iconos 24px estándar
-        sk.add("icon-back", icon("icons/back.png"), Drawable.class);
-        sk.add("icon-home", icon("icons/home.png"), Drawable.class);
-        sk.add("icon-save", icon("icons/save.png"), Drawable.class);
-        sk.add("icon-saveAs", icon("icons/saveAs.png"), Drawable.class);
+        sk.add("icon-back", icon("icons/back.png", 26, 26), Drawable.class);
+        sk.add("icon-home", icon("icons/home.png", 26, 26), Drawable.class);
+        sk.add("icon-save", icon("icons/save.png", 26, 26), Drawable.class);
+        sk.add("icon-saveAs", icon("icons/saveAs.png", 26, 26), Drawable.class);
 
-        // ── Icono de la papelera AUMENTADO a 48×48
-        TextureRegionDrawable trashDrawable = (TextureRegionDrawable) icon("icons/papelera.png");
-        trashDrawable.setMinWidth(48);
-        trashDrawable.setMinHeight(48);
-        sk.add("trash", trashDrawable, Drawable.class);
+        // ── Icono de la papelera 48×48 SIN FONDO
+        sk.add("trash", icon("icons/papelera.png", 72, 72), Drawable.class);
 
         // ── Bisel 3d
         sk.add("btn-up", bevel(FACE, HILITE, DARKSHDW), Drawable.class);
@@ -98,7 +95,7 @@ public final class UIStyles {
         sk.add("win95-window", btnStyle);
         sk.add("default", btnStyle, TextButtonStyle.class);
 
-        // ── ImageButton base (para back/home/save/saveAs)
+        // ── ImageButton styles
         ImageButtonStyle imgBase = new ImageButtonStyle();
         imgBase.up = sk.getDrawable("face");
         imgBase.down = sk.getDrawable("shadow");
@@ -119,10 +116,10 @@ public final class UIStyles {
         saveAs.imageUp = sk.getDrawable("icon-saveAs");
         sk.add("saveAs", saveAs, ImageButtonStyle.class);
 
-        // ── ImageButtonStyle para la papelera SIN FONDO
+        // ── ImageButtonStyle para la papelera SIN fondo
         ImageButtonStyle trashBtn = new ImageButtonStyle();
-        trashBtn.imageUp = trashDrawable;
-        trashBtn.imageDown = trashDrawable;
+        trashBtn.imageUp = sk.getDrawable("trash");
+        trashBtn.imageDown = sk.getDrawable("trash");
         sk.add("trash", trashBtn, ImageButtonStyle.class);
 
         // ── List, ScrollPane, TextField default styles
@@ -138,7 +135,7 @@ public final class UIStyles {
         return sk;
     }
 
-    // ───────────── Métodos auxiliares ─────────────
+    // ───────── Métodos auxiliares ─────────
 
     private static Drawable flat(Color c) {
         Pixmap p = new Pixmap(1, 1, Format.RGBA8888);
@@ -210,10 +207,13 @@ public final class UIStyles {
         return np;
     }
 
-    private static TextureRegionDrawable icon(String path) {
+    private static TextureRegionDrawable icon(String path, int w, int h) {
         Texture tex = new Texture(Gdx.files.internal(path));
         tex.setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest);
-        return new TextureRegionDrawable(new TextureRegion(tex));
+        TextureRegionDrawable d = new TextureRegionDrawable(new TextureRegion(tex));
+        d.setMinWidth(w);
+        d.setMinHeight(h);
+        return d;
     }
 
     private static BitmapFont font(int size) {
