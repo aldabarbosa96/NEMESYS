@@ -1,3 +1,4 @@
+// core/src/main/java/com/nemesys/ui/RecycleBinWindow.java
 package com.nemesys.ui;
 
 import com.badlogic.gdx.scenes.scene2d.ui.*;
@@ -6,6 +7,11 @@ import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.utils.Align;
 import com.nemesys.fs.FileSystemSim;
 
+/**
+ * Ventana de Papelera de Reciclaje.
+ * Sólo lista los archivos eliminados (sin mostrar rutas ni directorios),
+ * y permite eliminación definitiva con doble-clic.
+ */
 public final class RecycleBinWindow extends BaseWindow {
 
     private final FileSystemSim binFs;
@@ -17,27 +23,22 @@ public final class RecycleBinWindow extends BaseWindow {
 
         defaults().pad(4f);
 
-        // La lista de elementos en la papelera
+        // Lista de archivos en la papelera
         listView = new com.badlogic.gdx.scenes.scene2d.ui.List<>(skin);
         listView.setAlignment(Align.left);
 
-        // Scroll pane para la lista
+        // Scroll para la lista
         ScrollPane scroll = new ScrollPane(listView, skin);
         scroll.setFadeScrollBars(false);
 
-        // Añadimos el scroll a la ventana
         add(scroll).prefWidth(400).prefHeight(260).grow();
 
-        // Doble-clic para “restaurar” (o eliminar definitivamente)
+        // Doble-clic para eliminar definitivamente
         listView.addListener(new ClickListener() {
             @Override
             public void clicked(InputEvent event, float x, float y) {
                 if (getTapCount() == 2 && listView.getSelected() != null) {
-                    String sel = listView.getSelected();
-                    // Ejemplo de restauración: lo movemos de binFs a fs real
-                    // mgr.openEditor(...) o cualquier lógica que necesites.
-                    // Por ahora simplemente lo quitamos de la papelera:
-                    binFs.run("rm", sel);
+                    binFs.removeFile(listView.getSelected());
                     refresh();
                 }
             }
@@ -46,19 +47,25 @@ public final class RecycleBinWindow extends BaseWindow {
         pack();
         setPosition(200, 150);
 
-        // Carga inicial de contenido
+        // Carga inicial
         refresh();
     }
 
     /**
-     * Refresca la lista con el contenido actual de la papelera.
+     * Refresca la lista, mostrando sólo archivos (sin directorios).
      */
     private void refresh() {
         java.util.List<String> all = binFs.ls();
-        if (all.isEmpty()) {
+        java.util.List<String> filesOnly = new java.util.ArrayList<>();
+        for (String item : all) {
+            if (!item.endsWith("/")) {
+                filesOnly.add(item);
+            }
+        }
+        if (filesOnly.isEmpty()) {
             listView.setItems();
         } else {
-            listView.setItems(all.toArray(new String[0]));
+            listView.setItems(filesOnly.toArray(new String[0]));
         }
     }
 }

@@ -1,12 +1,13 @@
 package com.nemesys.ui;
 
-import com.badlogic.gdx.graphics.*;
+import com.badlogic.gdx.graphics.Color;
+import com.badlogic.gdx.graphics.Pixmap;
+import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.*;
 import com.badlogic.gdx.scenes.scene2d.utils.*;
 import com.badlogic.gdx.utils.Align;
 import com.nemesys.fs.FileSystemSim;
-
 
 import java.time.format.DateTimeFormatter;
 
@@ -61,7 +62,6 @@ public final class TerminalWindow extends BaseWindow {
         setPosition(100, 120);
     }
 
-    /* ---------- helpers gráficos ---------- */
     private void ensureBlack() {
         if (!skin.has("black", Drawable.class)) {
             Pixmap pm = new Pixmap(1, 1, Pixmap.Format.RGBA8888);
@@ -76,30 +76,21 @@ public final class TerminalWindow extends BaseWindow {
         if (!skin.has("terminal-field", TextField.TextFieldStyle.class)) {
             TextField.TextFieldStyle ts = new TextField.TextFieldStyle(skin.get(TextField.TextFieldStyle.class));
             ts.fontColor = Color.GREEN;
-
-            // Creamos un cursor de 1×1 píxel verde puro
             Pixmap pm = new Pixmap(1, 1, Pixmap.Format.RGBA8888);
             pm.setColor(Color.GREEN);
             pm.fill();
             TextureRegionDrawable greenCursor = new TextureRegionDrawable(new Texture(pm));
             pm.dispose();
-
-            ts.cursor    = greenCursor;            // ahora el cursor es realmente verde
+            ts.cursor = greenCursor;
             ts.background = null;
-            ts.selection  = skin.newDrawable("black", Color.BLACK);
+            ts.selection = skin.newDrawable("black", Color.BLACK);
             skin.add("terminal-field", ts);
         }
     }
 
-
-    /* ---------- prompt & output ---------- */
-    private String promptText() {
-        return fs.pwd() + ">";
-    }
-
     private void newPrompt() {
         promptRow = new Table();
-        promptRow.add(new Label(promptText(), skin, "terminal-label")).padRight(2f);
+        promptRow.add(new Label(fs.pwd() + ">", skin, "terminal-label")).padRight(2f);
         promptRow.add(input).growX();
         terminal.add(promptRow).growX().row();
         scrollToEnd();
@@ -111,52 +102,31 @@ public final class TerminalWindow extends BaseWindow {
         scrollToEnd();
     }
 
-    private void listTree(FileSystemSim fsim, String indent) {
-        for (String item : fsim.ls()) {
-            writeln(indent + item);
-            if (item.endsWith("/")) {
-                fsim.cd(item.substring(0, item.length() - 1));
-                listTree(fsim, indent + "  ");
-                fsim.cd("..");
-            }
-        }
-    }
-
-    @Override
-    public void setStage(Stage stage) {
-        super.setStage(stage);
-        if (stage != null) {
-            stage.setKeyboardFocus(input);
-        }
-    }
-
     private void scrollToEnd() {
         scroll.layout();
         scroll.setScrollPercentY(100);
     }
 
-    /* ---------- comandos ---------- */
     private void exec(String line) {
-        /* pinta la línea que el usuario acaba de escribir */
-        promptRow.clearChildren();
-        promptRow.add(new Label(promptText() + " " + line, skin, "terminal-label")).growX();
-
-        /* parseo simple: comando + resto como argumento único */
+        // ----- rm (mover a papelera) -----
         String[] parts = line.trim().split("\\s+", 2);
-        if (parts.length == 0) {
+        String cmd = parts[0];
+        String arg = parts.length > 1 ? parts[1] : "";
+
+        if ("rm".equals(cmd)) {
+            if (arg.isEmpty()) {
+                writeln("usage: rm <file>");
+            } else {
+                manager.moveToRecycle(fs, arg);
+            }
             newPrompt();
             return;
         }
 
-        String cmd = parts[0];
-        String arg = (parts.length > 1) ? parts[1] : "";
-
-        /* ------------------------------------------------------------------ */
-        /* 1 ─ Comandos que tocan el FS  →  delegados a FileSystemSim.run()   */
-        /* ------------------------------------------------------------------ */
+        // ----- resto de comandos -----
         final String[] fsCmds = {"ls", "dir", "cd", "pwd", "mkdir", "touch", "cat", "tree", "du", "df"};
         if (java.util.Arrays.asList(fsCmds).contains(cmd)) {
-            String result = fs.run(cmd, arg);     // null = éxito sin salida
+            String result = fs.run(cmd, arg);
             if (result != null && !result.isEmpty()) {
                 for (String ln : result.split("\n")) writeln(ln);
             }
@@ -164,9 +134,6 @@ public final class TerminalWindow extends BaseWindow {
             return;
         }
 
-        /* ------------------------------------------------------------------ */
-        /* 2 ─ Comandos “mock” que solo imprimen texto o afectan a la UI      */
-        /* ------------------------------------------------------------------ */
         switch (cmd) {
             case "help":
                 writeln("Builtin commands:");
@@ -199,7 +166,6 @@ public final class TerminalWindow extends BaseWindow {
                 writeln("  help            this message");
                 break;
 
-            /* utilidades ---------------------------------------------------- */
             case "time":
                 writeln(java.time.LocalTime.now().format(FMT));
                 break;
@@ -213,34 +179,38 @@ public final class TerminalWindow extends BaseWindow {
                 manager.close(this);
                 return;
 
-            /* información sistema ------------------------------------------- */
             case "whoami":
                 writeln("david");
                 break;
+
             case "hostname":
                 writeln("NEMESYS-PC");
                 break;
+
             case "ver":
                 writeln("NEMESYS OS version 0.3 (1996)");
                 break;
+
             case "uname":
                 if ("-a".equals(arg)) writeln("NEMESYS 0.3 i586 (bogus)");
                 else writeln("usage: uname -a");
                 break;
 
-            /* network mocks -------------------------------------------------- */
             case "ip":
                 writeln("eth0:  inet 192.168.0.42/24  brd 192.168.0.255  ...");
                 break;
+
             case "ifconfig":
                 writeln("eth0      Link encap:Ethernet  HWaddr 00:0A:E6:3E:FD:E1");
                 writeln("          inet addr:192.168.0.42  Mask:255.255.255.0");
                 break;
+
             case "ping":
                 writeln("Pinging " + arg + " with 32 bytes of data:");
                 writeln("Reply from " + arg + ": bytes=32 time=31ms TTL=57");
                 writeln("Reply from " + arg + ": bytes=32 time=30ms TTL=57");
                 break;
+
             case "tracert":
                 writeln("Tracing route to " + arg + " over a maximum of 30 hops");
                 writeln("  1  <1 ms  1 ms  1 ms  192.168.0.1");
@@ -263,4 +233,11 @@ public final class TerminalWindow extends BaseWindow {
         newPrompt();
     }
 
+    @Override
+    public void setStage(Stage stage) {
+        super.setStage(stage);
+        if (stage != null) {
+            stage.setKeyboardFocus(input);
+        }
+    }
 }

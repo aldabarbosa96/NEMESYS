@@ -23,7 +23,6 @@ public final class FileSystemSim {
         return out;
     }
 
-
     public boolean cd(String path) {
         if (path.equals("..") && cwd != ROOT) {       // subir
             cwd = findParent(ROOT, cwd);
@@ -49,7 +48,7 @@ public final class FileSystemSim {
     public String pwd() {
         String rel = getPath(ROOT, cwd, "");
         if (rel.equals("/")) rel = "";      // raíz → cadena vacía
-        return drive + rel.replace("/", "\\");  // convierte / en \
+        return drive + rel.replace("/", "\\");  // / → \
     }
 
     /* crea subdirectorio si no existe */
@@ -72,33 +71,19 @@ public final class FileSystemSim {
         cwd.file(name, ext, "");
     }
 
-
-    /* helpers ----------------------------------------------------------------*/
-    /* busca el padre real de target dentro del árbol ------------------------- */
-    private static Directory findParent(Directory current, Directory target) {
-        if (current.getDirs().contains(target)) return current;   // caso base
-        for (Directory d : current.getDirs()) {
-            Directory res = findParent(d, target);
-            if (res != null) return res;
-        }
-        return null;
+    /**
+     * Elimina un archivo del directorio actual y lo devuelve.
+     */
+    public VirtualFile removeFile(String fullName) {
+        VirtualFile f = cwd.file(fullName);
+        if (f == null) return null;
+        cwd.removeFile(fullName);
+        return f;
     }
 
-    private static String getPath(Directory base, Directory dir, String acc) {
-        if (dir == base) return "/" + acc;
-        Directory parent = findParent(base, dir);
-        return getPath(base, parent, dir.name + "/" + acc);
-    }
-
-    private static Directory buildSampleTree() {
-        Directory root = new Directory("");
-        Directory david = root.dir("users").dir("david");
-        david.dir("docs").file("README", "txt", "Bienvenido a NEMESYS.");
-        david.dir("pictures").file("wallpaper", "png", "<binary>");
-        root.dir("system").dir("logs").file("boot", "log", "Boot OK.");
-        return root;
-    }
-
+    /**
+     * Ejecuta comandos, incluido ahora "rm".
+     */
     public String run(String cmd, String arg) {
         switch (cmd) {
             case "dir":
@@ -126,16 +111,22 @@ public final class FileSystemSim {
                 String txt = cat(arg);
                 return (txt == null) ? "cat: file not found: " + arg : txt;
 
+            case "rm":
+                if (arg.isEmpty()) return "usage: rm <file>";
+                return removeFile(arg) != null ? null : "rm: cannot remove '" + arg + "'";
+
             case "du":
                 return "24K .\\users\\david\\docs\n12K .\\users\\david\\pictures"; // stub
 
             case "df":
-                return "Filesystem   Size  Used Avail Use% Mounted on\n" + "C:           512M  412M  100M  81% /"; // stub
+                return "Filesystem   Size  Used Avail Use% Mounted on\n" + "C:           512M  412M  100M  81% /";               // stub
 
             case "tree":
                 return buildTree("");
+
+            default:
+                return null;
         }
-        return null;
     }
 
     private String buildTree(String indent) {
@@ -173,5 +164,31 @@ public final class FileSystemSim {
         cwd.file(n, e, content);
 
         cwd = saveCwd;     // vuelve a cwd original
+    }
+
+    /* helpers ----------------------------------------------------------------*/
+
+    private static Directory findParent(Directory current, Directory target) {
+        if (current.getDirs().contains(target)) return current;
+        for (Directory d : current.getDirs()) {
+            Directory res = findParent(d, target);
+            if (res != null) return res;
+        }
+        return null;
+    }
+
+    private static String getPath(Directory base, Directory dir, String acc) {
+        if (dir == base) return "/" + acc;
+        Directory parent = findParent(base, dir);
+        return getPath(base, parent, dir.name + "/" + acc);
+    }
+
+    private static Directory buildSampleTree() {
+        Directory root = new Directory("");
+        Directory david = root.dir("users").dir("david");
+        david.dir("docs").file("README", "txt", "Bienvenido a NEMESYS.");
+        david.dir("pictures").file("wallpaper", "png", "<binary>");
+        root.dir("system").dir("logs").file("boot", "log", "Boot OK.");
+        return root;
     }
 }
