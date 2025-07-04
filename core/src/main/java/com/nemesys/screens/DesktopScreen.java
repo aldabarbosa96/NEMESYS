@@ -4,12 +4,10 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.Stage;
-import com.badlogic.gdx.scenes.scene2d.ui.Image;
-import com.badlogic.gdx.scenes.scene2d.ui.Label;
-import com.badlogic.gdx.scenes.scene2d.ui.Skin;
-import com.badlogic.gdx.scenes.scene2d.ui.Table;
-import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
+import com.badlogic.gdx.scenes.scene2d.ui.*;
+import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
 import com.badlogic.gdx.utils.Align;
 import com.badlogic.gdx.utils.Scaling;
 import com.badlogic.gdx.utils.viewport.ScreenViewport;
@@ -38,23 +36,66 @@ public final class DesktopScreen implements Screen {
         stage = new Stage(new ScreenViewport(), g.batch);
         skin = UIStyles.create();
 
+        // Wallpaper
         Texture wall = new Texture(Gdx.files.internal("wallpaper1.png"));
         Image bg = new Image(wall);
         bg.setFillParent(true);
         bg.setScaling(Scaling.stretch);
         stage.addActor(bg);
 
+        // Clock label (will be added to taskbar later)
         clock = new Label("", skin);
+
+        // Build taskbar and window manager
         Table taskButtons = buildTaskbar();
         wm = new WindowManager(stage, skin, taskButtons);
 
+        // Start menu
         startMenu = new StartMenu(skin, wm::open);
         startMenu.setVisible(false);
         stage.addActor(startMenu);
         startMenu.setPosition(0, BAR_H);
 
+        // Add desktop icons (after wm is ready)
+        addDesktopIcons();
+
+        // Input and initial clock update
         Gdx.input.setInputProcessor(stage);
         updateClock();
+    }
+
+    /**
+     * Places desktop‐style icons (currently only the Recycle Bin)
+     */
+    private void addDesktopIcons() {
+        // container for icon + label
+        Table iconCell = new Table();
+        iconCell.defaults().pad(4f);
+
+        // the trash icon, larger
+        ImageButton recycleBtn = new ImageButton(skin, "trash");
+        recycleBtn.addListener(new ChangeListener() {
+            @Override
+            public void changed(ChangeEvent event, Actor actor) {
+                wm.open(WindowManager.AppType.RECYCLE_BIN);
+            }
+        });
+        iconCell.add(recycleBtn).size(48f).row();
+
+        // label underneath
+        Label lbl = new Label("Papelera", skin);
+        lbl.setAlignment(Align.center);
+        iconCell.add(lbl).padTop(2f);
+
+        // finalize layout
+        iconCell.pack();
+
+        // position at top‐left with margin
+        float x = 20f;
+        float y = stage.getViewport().getWorldHeight() - iconCell.getHeight() - 20f;
+        iconCell.setPosition(x, y);
+
+        stage.addActor(iconCell);
     }
 
     private Table buildTaskbar() {
@@ -68,50 +109,51 @@ public final class DesktopScreen implements Screen {
         bar.getBackground().setMinHeight(BAR_H);
         bar.align(Align.left);
 
-        /* ───── Botón Inicio ───── */
+        /* ── Botón Inicio ── */
         TextButton startBtn = new TextButton("Inicio", skin, "start-btn");
         startBtn.pad(2, 10, 2, 10);
         bar.add(startBtn).width(90).padLeft(8);
 
-        /* ───── Botones de ventana ───── */
+        /* ── Botones de ventana ── */
         Table btnBar = new Table();
         btnBar.left();
         bar.add(btnBar).expandX().left();
 
-        /* ───── Reloj ───── */
+        /* ── Reloj ── */
         bar.add(clock).padRight(10);
 
         root.add(bar).growX().height(BAR_H);
 
         startBtn.addListener(e -> {
-            if (e.toString().equals("touchDown")) startMenu.setVisible(!startMenu.isVisible());
+            if ("touchDown".equals(e.toString())) {
+                startMenu.setVisible(!startMenu.isVisible());
+            }
             return true;
         });
 
         return btnBar;
     }
 
-
     private void updateClock() {
         clock.setText(LocalTime.now().format(FMT));
     }
 
     @Override
-    public void render(float d) {
+    public void render(float delta) {
         Gdx.gl.glClearColor(0, 0, 0, 1);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
-        acc += d;
+        acc += delta;
         if (acc >= 1f) {
             acc = 0;
             updateClock();
         }
-        stage.act(d);
+        stage.act(delta);
         stage.draw();
     }
 
     @Override
-    public void resize(int w, int h) {
-        stage.getViewport().update(w, h, true);
+    public void resize(int width, int height) {
+        stage.getViewport().update(width, height, true);
     }
 
     @Override

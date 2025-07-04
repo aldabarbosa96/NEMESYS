@@ -15,7 +15,10 @@ import java.util.Map;
 
 public final class WindowManager {
 
-    public enum AppType {TERMINAL, FILE_EXPLORER, TEXT_EDITOR}
+    /**
+     * Añadimos RECYCLE_BIN al enum para poder abrir la ventana de papelera.
+     */
+    public enum AppType { TERMINAL, FILE_EXPLORER, TEXT_EDITOR, RECYCLE_BIN }
 
     private final Stage stage;
     private final Skin skin;
@@ -25,6 +28,8 @@ public final class WindowManager {
     private final Map<BaseWindow, TextButton> buttons = new HashMap<>();
 
     private final FileSystemSim fs = new FileSystemSim();
+    /** FS dedicada para la papelera */
+    private final FileSystemSim recycleFs = new FileSystemSim();
 
     public WindowManager(Stage stage, Skin skin, Table taskbar) {
         this.stage = stage;
@@ -38,10 +43,15 @@ public final class WindowManager {
     }
 
     public void open(AppType type, String filePath) {
+        // Para todos excepto editores, si ya existe, lo traemos al frente
         if (type != AppType.TEXT_EDITOR) {
             for (BaseWindow w : openWindows) {
-                boolean match = (type == AppType.TERMINAL && w instanceof TerminalWindow) || (type == AppType.FILE_EXPLORER && w instanceof FileExplorerWindow);
+                boolean match =
+                    (type == AppType.TERMINAL       && w instanceof TerminalWindow)   ||
+                        (type == AppType.FILE_EXPLORER  && w instanceof FileExplorerWindow) ||
+                        (type == AppType.RECYCLE_BIN    && w instanceof RecycleBinWindow);
                 if (match) {
+                    // Ya existe: sólo mostrar/traer al frente
                     w.setVisible(true);
                     w.toFront();
                     stage.setKeyboardFocus(w);
@@ -52,12 +62,13 @@ public final class WindowManager {
             }
         }
 
+        // Si no había, crear nueva instancia
         BaseWindow w = create(type, filePath);
         openWindows.add(w);
         stage.addActor(w);
 
+        // Botón en la taskbar
         TextButton b = new TextButton(w.getWindowTitle(), skin, "win95-toggle");
-        // padding interno para que el texto respire
         b.pad(2f, 8f, 2f, 8f);
         b.addListener(new ChangeListener() {
             @Override
@@ -78,9 +89,7 @@ public final class WindowManager {
     }
 
     public void close(BaseWindow w) {
-        if (openWindows.remove(w)) {
-            w.remove();
-        }
+        if (openWindows.remove(w)) w.remove();
         TextButton b = buttons.remove(w);
         if (b != null) b.remove();
         refreshTaskbar();
@@ -93,13 +102,13 @@ public final class WindowManager {
         stage.setKeyboardFocus(null);
     }
 
+    /** Re-dibuja la barra de tareas con padding uniforme */
     private void refreshTaskbar() {
         taskbar.clearChildren();
         boolean first = true;
         for (BaseWindow w : openWindows) {
             TextButton b = buttons.get(w);
             if (first) {
-                // mantenemos la separación izquierda del botón Inicio
                 taskbar.add(b).padLeft(8f).padRight(4f);
                 first = false;
             } else {
@@ -108,6 +117,7 @@ public final class WindowManager {
         }
     }
 
+    /** Fábrica de ventanas según tipo */
     private BaseWindow create(AppType type, String path) {
         switch (type) {
             case TERMINAL:
@@ -117,6 +127,8 @@ public final class WindowManager {
             case TEXT_EDITOR:
                 String file = (path != null && !path.trim().isEmpty()) ? path : null;
                 return new TextEditorWindow(skin, this, fs, file);
+            case RECYCLE_BIN:
+                return new RecycleBinWindow(skin, this, recycleFs);
             default:
                 throw new IllegalArgumentException("Tipo no soportado: " + type);
         }
@@ -124,22 +136,23 @@ public final class WindowManager {
 
     private void registerToggleStyle() {
         if (skin.has("win95-toggle", TextButtonStyle.class)) return;
-
-        TextButtonStyle t = new TextButtonStyle(skin.getDrawable("face"),    // up
-            skin.getDrawable("shadow"),  // down
-            skin.getDrawable("shadow"),  // checked
-            skin.getFont("font-win95"));
-        t.fontColor = Color.BLACK;
-        t.downFontColor = Color.BLACK;
+        TextButtonStyle t = new TextButtonStyle(
+            skin.getDrawable("face"),   // up
+            skin.getDrawable("shadow"), // down
+            skin.getDrawable("shadow"), // checked
+            skin.getFont("font-win95")
+        );
+        t.fontColor      = Color.BLACK;
+        t.downFontColor  = Color.BLACK;
         t.checkedFontColor = Color.BLACK;
         skin.add("win95-toggle", t);
     }
 
+    /** Abre un editor desde terminal (“nano”) */
     public void openEditor(String filePath, FileSystemSim fsRef) {
         BaseWindow w = new TextEditorWindow(skin, this, fsRef, filePath);
         openWindows.add(w);
         stage.addActor(w);
-
         TextButton b = new TextButton(w.getWindowTitle(), skin, "win95-toggle");
         b.pad(2f, 8f, 2f, 8f);
         b.addListener(new ChangeListener() {
@@ -155,7 +168,6 @@ public final class WindowManager {
                 }
             }
         });
-
         buttons.put(w, b);
         refreshTaskbar();
     }
