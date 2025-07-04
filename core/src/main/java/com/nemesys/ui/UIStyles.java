@@ -59,13 +59,15 @@ public final class UIStyles {
         sk.add("title", sk.getDrawable("blue"), Drawable.class);
 
         // ── Iconos 24px estándar
-        sk.add("icon-back", icon("icons/back.png", 26, 26), Drawable.class);
-        sk.add("icon-home", icon("icons/home.png", 26, 26), Drawable.class);
-        sk.add("icon-save", icon("icons/save.png", 26, 26), Drawable.class);
-        sk.add("icon-saveAs", icon("icons/saveAs.png", 26, 26), Drawable.class);
+        sk.add("icon-back", icon("icons/back.png", 28, 28), Drawable.class);
+        sk.add("icon-home", icon("icons/home.png", 28, 28), Drawable.class);
+        sk.add("icon-save", icon("icons/save.png", 28, 28), Drawable.class);
+        sk.add("icon-saveAs", icon("icons/saveAs.png", 28, 28), Drawable.class);
+        sk.add("icon-restore", icon("icons/restore.png", 30,28), Drawable.class);
+        sk.add("icon-delete",  icon("icons/delete.png",  30,28), Drawable.class);
 
         // ── Icono de la papelera 48×48 SIN FONDO
-        sk.add("trash", icon("icons/papelera.png", 72, 72), Drawable.class);
+        sk.add("trash", icon("icons/papelera.png", 75, 75), Drawable.class);
 
         // ── Bisel 3d
         sk.add("btn-up", bevel(FACE, HILITE, DARKSHDW), Drawable.class);
@@ -115,6 +117,14 @@ public final class UIStyles {
         ImageButtonStyle saveAs = new ImageButtonStyle(imgBase);
         saveAs.imageUp = sk.getDrawable("icon-saveAs");
         sk.add("saveAs", saveAs, ImageButtonStyle.class);
+
+        ImageButtonStyle restore = new ImageButtonStyle(imgBase);
+        restore.imageUp = sk.getDrawable("icon-restore");
+        sk.add("restore", restore);
+
+        ImageButtonStyle delete = new ImageButtonStyle(imgBase);
+        delete.imageUp = sk.getDrawable("icon-delete");
+        sk.add("delete", delete);
 
         // ── ImageButtonStyle para la papelera SIN fondo
         ImageButtonStyle trashBtn = new ImageButtonStyle();

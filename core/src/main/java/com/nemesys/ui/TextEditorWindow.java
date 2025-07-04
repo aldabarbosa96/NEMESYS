@@ -26,8 +26,8 @@ public final class TextEditorWindow extends BaseWindow {
         ImageButton saveAs = new ImageButton(skin, "saveAs");
 
         bar.add(titleLabel).expandX().left();
-        bar.add(save).padRight(4f);
-        bar.add(saveAs);
+        bar.add(save).padRight(4f).padTop(5);
+        bar.add(saveAs).padTop(5);
 
         // área de texto
         area = new TextArea(loadText(), skin);

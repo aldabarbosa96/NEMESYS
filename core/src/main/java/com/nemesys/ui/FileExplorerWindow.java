@@ -74,8 +74,8 @@ public final class FileExplorerWindow extends BaseWindow {
         });
 
         Table nav = new Table();
-        nav.add(upBtn).size(24).padRight(4f);
-        nav.add(homeBtn).size(24).padRight(8f);
+        nav.add(upBtn).size(28).padRight(4f);
+        nav.add(homeBtn).size(28).padRight(8f);
         nav.add(pathLabel).growX();
 
         ScrollPane scroll = new ScrollPane(list, skin);

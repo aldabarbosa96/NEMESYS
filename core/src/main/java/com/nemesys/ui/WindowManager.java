@@ -93,6 +93,13 @@ public final class WindowManager {
             recycleFs.overwrite(name, vf.content);
         }
     }
+    public void restoreFromRecycle(String name) {
+        VirtualFile vf = recycleFs.removeFile(name);
+        if (vf != null) {
+            fs.toRoot();
+            fs.overwrite(name, vf.content);
+        }
+    }
 
     /** Abre un editor desde terminal (“nano”) */
     public void openEditor(String filePath, FileSystemSim fsRef) {
