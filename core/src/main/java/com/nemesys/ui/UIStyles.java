@@ -17,10 +17,14 @@ public final class UIStyles {
     public static Skin create() {
         Skin skin = new Skin();
 
-        /* colores */
-        Color gray = Color.valueOf("C0C0C0"), dGray = Color.valueOf("808080"), white = Color.WHITE, black = Color.BLACK, blue = Color.valueOf("000080");
+        /* ────── Colores base ────── */
+        Color gray = Color.valueOf("C0C0C0");
+        Color dGray = Color.valueOf("808080");
+        Color white = Color.WHITE;
+        Color black = Color.BLACK;
+        Color blue = Color.valueOf("000080");
 
-        /* drawables 1×1 */
+        /* ────── Drawables planos 1×1 ────── */
         skin.add("gray", flat(gray), Drawable.class);
         skin.add("dgray", flat(dGray), Drawable.class);
         skin.add("white", flat(white), Drawable.class);
@@ -31,56 +35,72 @@ public final class UIStyles {
         skin.add("taskbar", skin.newDrawable("dgray"), Drawable.class);
         skin.add("title", skin.getDrawable("blue"), Drawable.class);
 
-        /* iconos navegación */
-        skin.add("icon-back", new TextureRegionDrawable(new TextureRegion(new Texture(Gdx.files.internal("icons/back.png")))), Drawable.class);
-        skin.add("icon-home", new TextureRegionDrawable(new TextureRegion(new Texture(Gdx.files.internal("icons/home.png")))), Drawable.class);
+        /* ────── Iconos (24 px lógicos) ────── */
+        skin.add("icon-back", icon("icons/back.png", 24), Drawable.class);
+        skin.add("icon-home", icon("icons/home.png", 24), Drawable.class);
+        skin.add("icon-save", icon("icons/save.png", 24), Drawable.class);
+        skin.add("icon-saveAs", icon("icons/saveAs.png", 24), Drawable.class);
 
-        /* bordes Win-95 para botones (24 px) */
+        /* ────── Bordes Win-95 para botones ────── */
         skin.add("btn-up", bordered(gray, black, 24), Drawable.class);
         skin.add("btn-down", bordered(dGray, black, 24), Drawable.class);
 
-        /* fuentes IBM Plex Sans */
+        /* ────── Fuentes IBM Plex Sans ────── */
         BitmapFont font14 = font(14);
         BitmapFont font18 = font(18);
 
-        /* estilo de título (18 px blanco) */
+        /* ────── Estilos de texto ────── */
         skin.add("title-label", new Label.LabelStyle(font18, white));
+        skin.add("default", new Label.LabelStyle(font14, black));
 
-        /* WindowStyle */
-        Window.WindowStyle ws = new Window.WindowStyle(font18, white, skin.getDrawable("gray"));
-        skin.add("default", ws);
+        /* ────── WindowStyle ────── */
+        Window.WindowStyle win95Frame = new Window.WindowStyle(font18, white, skin.getDrawable("gray"));
+        skin.add("default", win95Frame);   // Window por defecto
+        skin.add("win95-frame", win95Frame);   // Marco Win-95 (por si lo necesitas aparte)
 
-        /* TextButton genérico */
+        /* ────── TextButtonStyle genérico ────── */
         TextButton.TextButtonStyle btn = new TextButton.TextButtonStyle(skin.getDrawable("gray"), skin.getDrawable("dgray"), skin.getDrawable("white"), font14);
         btn.fontColor = black;
         skin.add("default", btn);
-        skin.add("win95-window", btn);
+        skin.add("win95-window", btn);   // ⬅⬅ requerido por tu código
 
-        /* ImageButton nav-back / nav-home */
-        ImageButton.ImageButtonStyle back = new ImageButton.ImageButtonStyle();
-        back.up = skin.getDrawable("btn-up");
-        back.down = skin.getDrawable("btn-down");
+        /* ────── Base para ImageButton ────── */
+        ImageButton.ImageButtonStyle imgBase = new ImageButton.ImageButtonStyle();
+        imgBase.up = skin.getDrawable("btn-up");
+        imgBase.down = skin.getDrawable("btn-down");
+
+        /* ────── ImageButtons específicos ────── */
+        ImageButton.ImageButtonStyle back = new ImageButton.ImageButtonStyle(imgBase);
         back.imageUp = skin.getDrawable("icon-back");
         skin.add("nav-back", back);
 
-        ImageButton.ImageButtonStyle home = new ImageButton.ImageButtonStyle(back);
+        ImageButton.ImageButtonStyle home = new ImageButton.ImageButtonStyle(imgBase);
         home.imageUp = skin.getDrawable("icon-home");
         skin.add("nav-home", home);
 
-        /* Label y List */
-        skin.add("default", new Label.LabelStyle(font14, black));
-        List.ListStyle ls = new List.ListStyle(font14, white, black, skin.getDrawable("blue"));
-        skin.add("default", ls);
+        ImageButton.ImageButtonStyle save = new ImageButton.ImageButtonStyle(imgBase);
+        save.imageUp = skin.getDrawable("icon-save");
+        skin.add("save", save);
 
-        /* ScrollPane / TextField */
+        ImageButton.ImageButtonStyle saveAs = new ImageButton.ImageButtonStyle(imgBase);
+        saveAs.imageUp = skin.getDrawable("icon-saveAs");
+        skin.add("saveAs", saveAs);
+
+        /* ────── ListStyle ────── */
+        List.ListStyle listStyle = new List.ListStyle(font14, white, black, skin.getDrawable("blue"));
+        skin.add("default", listStyle);
+
+        /* ────── ScrollPaneStyle / TextFieldStyle ────── */
         skin.add("default", new ScrollPane.ScrollPaneStyle());
+
         TextField.TextFieldStyle tf = new TextField.TextFieldStyle(font14, black, skin.getDrawable("black"), null, skin.getDrawable("white"));
         skin.add("default", tf);
 
         return skin;
     }
 
-    /* helper drawables */
+    /* ─────────── Helpers ─────────── */
+
     private static Drawable flat(Color c) {
         Pixmap p = new Pixmap(1, 1, Pixmap.Format.RGBA8888);
         p.setColor(c);
@@ -90,14 +110,20 @@ public final class UIStyles {
         return d;
     }
 
-    private static Drawable bordered(Color fill, Color border, int s) {
-        Pixmap p = new Pixmap(s, s, Pixmap.Format.RGBA8888);
+    private static Drawable bordered(Color fill, Color border, int size) {
+        Pixmap p = new Pixmap(size, size, Pixmap.Format.RGBA8888);
         p.setColor(fill);
         p.fill();
         p.setColor(border);
-        p.drawRectangle(0, 0, s, s);
+        p.drawRectangle(0, 0, size, size);
         TextureRegionDrawable d = new TextureRegionDrawable(new Texture(p));
         p.dispose();
+        return d;
+    }
+
+    private static Drawable icon(String path, int logicalSize) {
+        TextureRegionDrawable d = new TextureRegionDrawable(new TextureRegion(new Texture(Gdx.files.internal(path))));
+        d.setMinSize(logicalSize, logicalSize);  // tamaño lógico (Scene2D)
         return d;
     }
 

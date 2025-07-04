@@ -8,13 +8,14 @@ import com.nemesys.fs.FileSystemSim;
 
 /**
  * Ventana de edición de texto estilo Bloc-de-Notas.
- * • “Save”     → guarda en la ruta actual (o abre diálogo si es nuevo).
- * • “Save As”  → siempre lanza el diálogo {@link SaveDialog}.
+ * • “Save”     → icono, guarda en la ruta actual (o abre diálogo si es nuevo) y permanece abierta.
+ * • “Save As”  → icono, guarda siempre en nueva ruta y cierra el editor.
  */
 public final class TextEditorWindow extends BaseWindow {
 
     private final FileSystemSim fs;
     private final Skin skin;
+    private final WindowManager manager;
 
     /* estado documento ------------------------------------------------------ */
     private String currentPath;          // null → aún sin nombre
@@ -22,10 +23,10 @@ public final class TextEditorWindow extends BaseWindow {
     private final Label titleLabel;
 
     public TextEditorWindow(Skin skin, WindowManager mgr, FileSystemSim fs, String path) {
-
         super("Editor", skin, WindowManager.AppType.TEXT_EDITOR, mgr);
         this.fs = fs;
         this.skin = skin;
+        this.manager = mgr;
         this.currentPath = path;
 
         /* ── layout básico ── */
@@ -35,8 +36,8 @@ public final class TextEditorWindow extends BaseWindow {
         Table bar = new Table();
         titleLabel = new Label((currentPath == null) ? "Untitled.txt" : currentPath, skin);
 
-        TextButton saveBtn = new TextButton("Save", skin);
-        TextButton saveAsBtn = new TextButton("Save As", skin);
+        ImageButton saveBtn = new ImageButton(skin, "save");
+        ImageButton saveAsBtn = new ImageButton(skin, "saveAs");
 
         bar.add(titleLabel).expandX().left();
         bar.add(saveBtn).padRight(4);
@@ -52,11 +53,13 @@ public final class TextEditorWindow extends BaseWindow {
         pack();
         setPosition(180, 140);
 
+        // Botón X: cerrar totalmente (remueve de ventana y taskbar)
         Actor xBtn = getTitleTable().getChildren().peek();
-        xBtn.clearListeners();                         // elimina listener heredado
+        xBtn.clearListeners();
         xBtn.addListener(new ClickListener() {
-            @Override public void clicked(InputEvent ev, float x, float y) {
-                remove();                              // quita del Stage ⇒ GC
+            @Override
+            public void clicked(InputEvent ev, float x, float y) {
+                manager.close(WindowManager.AppType.TEXT_EDITOR);
             }
         });
 
@@ -64,12 +67,10 @@ public final class TextEditorWindow extends BaseWindow {
         saveBtn.addListener(e -> {
             if (!e.toString().equals("touchDown")) return false;
             if (currentPath == null) {
-                openSaveDialog();
+                openSaveDialog(false);
             } else {
-                /* 1) navega al directorio del archivo  */
                 int idx = Math.max(currentPath.lastIndexOf('\\'), currentPath.lastIndexOf('/'));
                 if (idx >= 0) fs.cd("..");
-                /* 2) guarda usando sólo el nombre */
                 String name = idx >= 0 ? currentPath.substring(idx + 1) : currentPath;
                 fs.overwrite(name, area.getText());
             }
@@ -77,7 +78,8 @@ public final class TextEditorWindow extends BaseWindow {
         });
 
         saveAsBtn.addListener(e -> {
-            if (e.toString().equals("touchDown")) openSaveDialog();
+            if (!e.toString().equals("touchDown")) return false;
+            openSaveDialog(true);
             return true;
         });
     }
@@ -89,14 +91,18 @@ public final class TextEditorWindow extends BaseWindow {
         return txt == null ? "" : txt;
     }
 
-    /* lanza el diálogo modal “Save As…” */
-    private void openSaveDialog() {
+    /**
+     * @param closeAfterSave si es true, cierra la ventana tras guardar (Save As).
+     */
+    private void openSaveDialog(boolean closeAfterSave) {
         SaveDialog dlg = new SaveDialog(skin, fs, fileName -> {
             currentPath = fs.pwd() + "\\" + fileName;
             fs.overwrite(fileName, area.getText());
             titleLabel.setText(currentPath);
+            if (closeAfterSave) {
+                manager.close(WindowManager.AppType.TEXT_EDITOR);
+            }
         });
         getStage().addActor(dlg);
     }
-
 }
