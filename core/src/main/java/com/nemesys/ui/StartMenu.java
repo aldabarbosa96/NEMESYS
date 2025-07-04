@@ -10,7 +10,7 @@ public final class StartMenu extends Table {
 
     public StartMenu(Skin skin, Consumer<WindowManager.AppType> launcher) {
         super(skin);
-        setBackground("taskbar");
+        setBackground("menu-bg");
         pad(6f);
         defaults().pad(2f).fillX();
         TextButton terminal = new TextButton("Terminal", skin);

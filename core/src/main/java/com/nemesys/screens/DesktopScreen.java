@@ -30,7 +30,7 @@ public final class DesktopScreen implements Screen {
     private final StartMenu startMenu;
     private final Label clock;
     private float acc;
-    private static final float BAR_H = 36f;
+    private static final float BAR_H = 48f;
     private static final DateTimeFormatter FMT = DateTimeFormatter.ofPattern("HH:mm");
 
     public DesktopScreen(NemesysGame g) {
@@ -66,22 +66,31 @@ public final class DesktopScreen implements Screen {
         Table bar = new Table(skin);
         bar.setBackground("taskbar");
         bar.getBackground().setMinHeight(BAR_H);
+        bar.align(Align.left);
 
-        TextButton startBtn = new TextButton("Start", skin);
-        bar.add(startBtn).width(60);
+        /* ───── Botón Inicio ───── */
+        TextButton startBtn = new TextButton("Inicio", skin, "start-btn");
+        startBtn.pad(4, 10, 4, 10);          // ↑ padding extra arriba/abajo/left/right
+        bar.add(startBtn).width(90).padLeft(4);
 
+        /* ───── Botones de ventana ───── */
         Table btnBar = new Table();
-        bar.add(btnBar).expandX();
+        btnBar.left();
+        bar.add(btnBar).expandX().left();
 
+        /* ───── Reloj ───── */
         bar.add(clock).padRight(10);
+
         root.add(bar).growX().height(BAR_H);
 
         startBtn.addListener(e -> {
             if (e.toString().equals("touchDown")) startMenu.setVisible(!startMenu.isVisible());
             return true;
         });
+
         return btnBar;
     }
+
 
     private void updateClock() {
         clock.setText(LocalTime.now().format(FMT));

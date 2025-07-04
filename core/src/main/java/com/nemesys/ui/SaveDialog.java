@@ -7,6 +7,9 @@ import com.nemesys.fs.FileSystemSim;
 
 import java.util.function.Consumer;
 
+/**
+ * Diálogo “Save As…” con cabecera Win-95.
+ */
 public final class SaveDialog extends Window {
 
     private final FileSystemSim fs;
@@ -16,38 +19,45 @@ public final class SaveDialog extends Window {
     private final Consumer<String> onSave;
 
     public SaveDialog(Skin skin, FileSystemSim fs, Consumer<String> onSave) {
-        super("Save As…", skin);
+        super("Save As...", skin);
         this.fs = fs;
         this.onSave = onSave;
 
-        /* ────── cabecera Win-95 ────── */
-        getTitleLabel().setStyle(skin.get("title-label", Label.LabelStyle.class));
+        /* ────── CABECERA AZUL Win-95 ────── */
         getTitleTable().setBackground(skin.getDrawable("title"));
+        getTitleTable().padLeft(6f).padRight(6f);
+        getTitleLabel().setStyle(skin.get("title-label", Label.LabelStyle.class));
+        getTitleLabel().setAlignment(Align.left);
+        padTop(24f);                     // ← ¡lo que faltaba!
+        setMovable(true);
+        setKeepWithinStage(true);
 
-        /* ────── layout interno ────── */
+        /* ────── LAYOUT INTERNO ────── */
         defaults().pad(4f).align(Align.left);
 
-        /* nav: ↑ / home + ruta actual */
-        ImageButton upBtn = new ImageButton(skin, "nav-back");
+        /* nav ↑ / home + ruta actual */
+        ImageButton upBtn   = new ImageButton(skin, "nav-back");
         ImageButton homeBtn = new ImageButton(skin, "nav-home");
         pathLabel = new Label(fs.pwd(), skin);
 
         Table nav = new Table();
-        nav.add(upBtn).size(24).padRight(4);
+        nav.add(upBtn)  .size(24).padRight(4);
         nav.add(homeBtn).size(24).padRight(8);
         nav.add(pathLabel).growX();
         add(nav).growX().row();
 
-        /* lista de directorios */
+        /* lista directorios */
         list = new List<>(skin);
-        list.setItems(fs.ls().stream().filter(s -> s.endsWith("/")).toArray(String[]::new));
+        list.setItems(fs.ls().stream()
+            .filter(s -> s.endsWith("/"))
+            .toArray(String[]::new));
         ScrollPane scroll = new ScrollPane(list, skin);
         scroll.setFadeScrollBars(false);
         add(scroll).prefWidth(400).prefHeight(240).grow().row();
 
         /* nombre + botones */
         nameField = new TextField("", skin);
-        TextButton save = new TextButton("Save", skin);
+        TextButton save   = new TextButton("Save",   skin);
         TextButton cancel = new TextButton("Cancel", skin);
 
         Table bottom = new Table();
@@ -59,16 +69,13 @@ public final class SaveDialog extends Window {
 
         pack();
 
-        /* ────── listeners ────── */
+        /* ────── LISTENERS ────── */
         upBtn.addListener(e -> {
             if (e.toString().equals("touchDown") && fs.cd("..")) refresh();
             return true;
         });
         homeBtn.addListener(e -> {
-            if (e.toString().equals("touchDown")) {
-                fs.toRoot();
-                refresh();
-            }
+            if (e.toString().equals("touchDown")) { fs.toRoot(); refresh(); }
             return true;
         });
         list.addListener(e -> {
@@ -94,18 +101,21 @@ public final class SaveDialog extends Window {
         });
     }
 
-    /* refresca la ruta y la lista de carpetas */
+    /* actualiza ruta y lista */
     private void refresh() {
         pathLabel.setText(fs.pwd());
-        list.setItems(fs.ls().stream().filter(s -> s.endsWith("/")).toArray(String[]::new));
+        list.setItems(fs.ls().stream()
+            .filter(s -> s.endsWith("/"))
+            .toArray(String[]::new));
     }
 
-    /* centra la ventana al añadirse al Stage */
+    /* centra al añadirse al Stage */
     @Override
     public void setStage(Stage stage) {
         super.setStage(stage);
         if (stage != null) {
-            setPosition((stage.getWidth() - getWidth()) / 2f, (stage.getHeight() - getHeight()) / 2f);
+            setPosition((stage.getWidth()  - getWidth())  / 2f,
+                (stage.getHeight() - getHeight()) / 2f);
         }
     }
 }
