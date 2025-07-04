@@ -1,6 +1,7 @@
 package com.nemesys.ui;
 
 import com.badlogic.gdx.graphics.*;
+import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.*;
 import com.badlogic.gdx.scenes.scene2d.utils.*;
 import com.badlogic.gdx.utils.Align;
@@ -72,20 +73,24 @@ public final class TerminalWindow extends BaseWindow {
     }
 
     private void ensureStyles() {
-        if (!skin.has("terminal-label", Label.LabelStyle.class)) {
-            Label.LabelStyle ls = new Label.LabelStyle(skin.get(Label.LabelStyle.class));
-            ls.fontColor = Color.GREEN;
-            skin.add("terminal-label", ls);
-        }
         if (!skin.has("terminal-field", TextField.TextFieldStyle.class)) {
             TextField.TextFieldStyle ts = new TextField.TextFieldStyle(skin.get(TextField.TextFieldStyle.class));
             ts.fontColor = Color.GREEN;
-            ts.cursor = skin.newDrawable("cursor", Color.GREEN);
+
+            // Creamos un cursor de 1×1 píxel verde puro
+            Pixmap pm = new Pixmap(1, 1, Pixmap.Format.RGBA8888);
+            pm.setColor(Color.GREEN);
+            pm.fill();
+            TextureRegionDrawable greenCursor = new TextureRegionDrawable(new Texture(pm));
+            pm.dispose();
+
+            ts.cursor    = greenCursor;            // ahora el cursor es realmente verde
             ts.background = null;
-            ts.selection = skin.newDrawable("black", Color.BLACK);
+            ts.selection  = skin.newDrawable("black", Color.BLACK);
             skin.add("terminal-field", ts);
         }
     }
+
 
     /* ---------- prompt & output ---------- */
     private String promptText() {
@@ -114,6 +119,14 @@ public final class TerminalWindow extends BaseWindow {
                 listTree(fsim, indent + "  ");
                 fsim.cd("..");
             }
+        }
+    }
+
+    @Override
+    public void setStage(Stage stage) {
+        super.setStage(stage);
+        if (stage != null) {
+            stage.setKeyboardFocus(input);
         }
     }
 
@@ -197,7 +210,7 @@ public final class TerminalWindow extends BaseWindow {
                 break;
 
             case "exit":
-                manager.close(WindowManager.AppType.TERMINAL);
+                manager.close(this);
                 return;
 
             /* información sistema ------------------------------------------- */

@@ -43,7 +43,7 @@ public abstract class BaseWindow extends Window {
             @Override
             public void clicked(InputEvent e, float x, float y) {
                 setVisible(false);
-                mgr.minimize(type, BaseWindow.this);
+                mgr.minimize(BaseWindow.this);
             }
         });
 
@@ -52,7 +52,7 @@ public abstract class BaseWindow extends Window {
         close.addListener(new ClickListener() {
             @Override
             public void clicked(InputEvent e, float x, float y) {
-                mgr.close(type);
+                mgr.close(BaseWindow.this);
             }
         });
 

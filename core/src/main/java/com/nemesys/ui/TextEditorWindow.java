@@ -71,7 +71,7 @@ public final class TextEditorWindow extends BaseWindow {
             currentPath = fs.pwd() + "\\" + fileName;
             fs.overwrite(fileName, area.getText());
             titleLabel.setText(currentPath);
-            if (closeAfter) mgr.close(WindowManager.AppType.TEXT_EDITOR);
+            if (closeAfter) mgr.close(this);
         });
         getStage().addActor(dlg);
     }
