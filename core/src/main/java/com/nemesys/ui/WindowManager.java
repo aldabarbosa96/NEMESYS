@@ -1,6 +1,6 @@
+// File: core/src/main/java/com/nemesys/ui/WindowManager.java
 package com.nemesys.ui;
 
-import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.*;
@@ -16,24 +16,34 @@ import java.util.Map;
 
 public final class WindowManager {
 
-    /** Tipos de “apps” */
-    public enum AppType { TERMINAL, FILE_EXPLORER, TEXT_EDITOR, RECYCLE_BIN }
+    /**
+     * Tipos de “apps”
+     */
+    public enum AppType {TERMINAL, FILE_EXPLORER, TEXT_EDITOR, RECYCLE_BIN}
 
     private final Stage stage;
-    private final Skin  skin;
+    private final Skin skin;
     private final Table taskbar;
 
-    private final List<BaseWindow>          openWindows = new ArrayList<>();
-    private final Map<BaseWindow, TextButton> buttons    = new HashMap<>();
+    private final List<BaseWindow> openWindows = new ArrayList<>();
+    private final Map<BaseWindow, TextButton> buttons = new HashMap<>();
 
-    /** FS “real” */
-    private final FileSystemSim fs        = new FileSystemSim();
-    /** FS de la papelera */
+    /**
+     * FS “real”
+     */
+    private final FileSystemSim fs = new FileSystemSim();
+    /**
+     * FS de la papelera
+     */
     private final FileSystemSim recycleFs = new FileSystemSim();
+    /**
+     * Mapa fichero → ruta original
+     */
+    private final Map<String, String> recycleMap = new HashMap<>();
 
     public WindowManager(Stage stage, Skin skin, Table taskbar) {
-        this.stage   = stage;
-        this.skin    = skin;
+        this.stage = stage;
+        this.skin = skin;
         this.taskbar = taskbar;
         registerToggleStyle();
     }
@@ -46,10 +56,7 @@ public final class WindowManager {
         // Si ya hay una ventana no-editor, la traemos al frente
         if (type != AppType.TEXT_EDITOR) {
             for (BaseWindow w : openWindows) {
-                boolean match =
-                    (type == AppType.TERMINAL      && w instanceof TerminalWindow)
-                        || (type == AppType.FILE_EXPLORER && w instanceof FileExplorerWindow)
-                        || (type == AppType.RECYCLE_BIN   && w instanceof RecycleBinWindow);
+                boolean match = (type == AppType.TERMINAL && w instanceof TerminalWindow) || (type == AppType.FILE_EXPLORER && w instanceof FileExplorerWindow) || (type == AppType.RECYCLE_BIN && w instanceof RecycleBinWindow);
                 if (match) {
                     w.setVisible(true);
                     w.toFront();
@@ -85,23 +92,40 @@ public final class WindowManager {
         stage.setKeyboardFocus(null);
     }
 
-    /** Mueve un archivo de un FS origen a la papelera */
+    /**
+     * Mueve un archivo de un FS origen a la papelera
+     */
     public void moveToRecycle(FileSystemSim sourceFs, String name) {
         VirtualFile vf = sourceFs.removeFile(name);
         if (vf != null) {
+            String originalPath = sourceFs.pwd();
+            recycleMap.put(name, originalPath);
+            // Lo colocamos en la papelera
             recycleFs.toRoot();
             recycleFs.overwrite(name, vf.content);
         }
     }
+
+    /**
+     * Restaura un archivo a su ruta original
+     */
     public void restoreFromRecycle(String name) {
         VirtualFile vf = recycleFs.removeFile(name);
         if (vf != null) {
-            fs.toRoot();
+            // Recuperamos ruta original
+            String originalPath = recycleMap.remove(name);
+            if (originalPath != null) {
+                fs.cdAbsolute(originalPath);
+            } else {
+                fs.toRoot();
+            }
             fs.overwrite(name, vf.content);
         }
     }
 
-    /** Abre un editor desde terminal (“nano”) */
+    /**
+     * Abre un editor desde terminal (“nano”)
+     */
     public void openEditor(String filePath, FileSystemSim fsRef) {
         BaseWindow w = new TextEditorWindow(skin, this, fsRef, filePath);
         openWindows.add(w);
@@ -118,7 +142,7 @@ public final class WindowManager {
         b.pad(2f, 8f, 2f, 8f);
         b.addListener(new ChangeListener() {
             @Override
-            public void changed(ChangeEvent event, Actor actor) {
+            public void changed(ChangeListener.ChangeEvent event, Actor actor) {
                 if (b.isChecked()) {
                     w.setVisible(false);
                     stage.setKeyboardFocus(null);
@@ -164,15 +188,13 @@ public final class WindowManager {
 
     private void registerToggleStyle() {
         if (skin.has("win95-toggle", TextButtonStyle.class)) return;
-        TextButtonStyle t = new TextButtonStyle(
-            skin.getDrawable("face"),   // up
+        TextButtonStyle t = new TextButtonStyle(skin.getDrawable("face"),   // up
             skin.getDrawable("shadow"), // down
             skin.getDrawable("shadow"), // checked
-            skin.getFont("font-win95")
-        );
-        t.fontColor       = Color.BLACK;
-        t.downFontColor   = Color.BLACK;
-        t.checkedFontColor = Color.BLACK;
+            skin.getFont("font-win95"));
+        t.fontColor = com.badlogic.gdx.graphics.Color.BLACK;
+        t.downFontColor = com.badlogic.gdx.graphics.Color.BLACK;
+        t.checkedFontColor = com.badlogic.gdx.graphics.Color.BLACK;
         skin.add("win95-toggle", t);
     }
 }

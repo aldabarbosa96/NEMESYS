@@ -1,3 +1,4 @@
+// File: core/src/main/java/com/nemesys/fs/FileSystemSim.java
 package com.nemesys.fs;
 
 import java.util.List;
@@ -82,7 +83,7 @@ public final class FileSystemSim {
     }
 
     /**
-     * Ejecuta comandos, incluido ahora "rm".
+     * Ejecuta comandos, incluido ahora "rm" y "tree".
      */
     public String run(String cmd, String arg) {
         switch (cmd) {
@@ -129,11 +130,15 @@ public final class FileSystemSim {
         }
     }
 
+    /**
+     * Construye recursivamente un listado tipo "tree".
+     */
     private String buildTree(String indent) {
         StringBuilder sb = new StringBuilder();
         for (String item : ls()) {
             sb.append(indent).append(item).append('\n');
             if (item.endsWith("/")) {
+                // entramos en la carpeta
                 cd(item.substring(0, item.length() - 1));
                 sb.append(buildTree(indent + "  "));
                 cd("..");
@@ -164,6 +169,24 @@ public final class FileSystemSim {
         cwd.file(n, e, content);
 
         cwd = saveCwd;     // vuelve a cwd original
+    }
+
+    /**
+     * Cambia cwd a la ruta absoluta Windows devuelta por pwd(),
+     * creando los directorios si hace falta.
+     * Ejemplo: cdAbsolute("C:\\users\\david\\docs");
+     */
+    public void cdAbsolute(String fullPath) {
+        // quitamos la unidad y barra inicial ("C:" o "C:\")
+        String path = fullPath.replaceFirst("^[A-Za-z]:\\\\?", "");
+        toRoot();
+        for (String part : path.split("[\\\\/]+")) {
+            if (part.isEmpty()) continue;
+            if (!cd(part)) {
+                mkdir(part);
+                cd(part);
+            }
+        }
     }
 
     /* helpers ----------------------------------------------------------------*/

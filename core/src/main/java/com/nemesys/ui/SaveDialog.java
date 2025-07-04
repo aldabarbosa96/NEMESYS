@@ -9,7 +9,6 @@ import com.nemesys.fs.FileSystemSim;
 import java.util.function.Consumer;
 
 public final class SaveDialog extends Window {
-
     private static final float FRAME = 3f;
     private static final float BAR = 30f;
 
@@ -19,15 +18,18 @@ public final class SaveDialog extends Window {
     private final TextField nameField;
     private final Consumer<String> onSave;
 
+    /**
+     * Constructor estándar.
+     */
     public SaveDialog(Skin skin, FileSystemSim fs, Consumer<String> onSave) {
         super("Save As...", skin);
         this.fs = fs;
         this.onSave = onSave;
 
-        // —— Cabecera idéntica a BaseWindow ——
         pad(FRAME);
         padTop(FRAME + BAR);
 
+        // —— Cabecera idéntica a BaseWindow ——
         Table titleTable = getTitleTable();
         titleTable.clearChildren();
         titleTable.pad(0);
@@ -39,8 +41,6 @@ public final class SaveDialog extends Window {
         Label titleLbl = getTitleLabel();
         titleLbl.setStyle(skin.get("title-label", Label.LabelStyle.class));
         titleLbl.setAlignment(Align.left);
-
-        // sólo el título, sin minimizer, sin close (Cancel está abajo)
         bar.add(titleLbl).expandX().left().padLeft(8f);
 
         titleTable.add(bar).expand().fillX().padTop(FRAME).height(BAR);
@@ -84,7 +84,7 @@ public final class SaveDialog extends Window {
 
         pack();
 
-        /* ────── LISTENERS ────── */
+        // Listeners nav
         upBtn.addListener(e -> {
             if (e.toString().equals("touchDown") && fs.cd("..")) refresh();
             return true;
@@ -104,10 +104,14 @@ public final class SaveDialog extends Window {
             }
             return true;
         });
+
+        // Cancel
         cancel.addListener(e -> {
             if (e.toString().equals("touchDown")) remove();
             return true;
         });
+
+        // Save
         save.addListener(e -> {
             if (!e.toString().equals("touchDown")) return false;
             String name = nameField.getText().trim();
@@ -120,16 +124,19 @@ public final class SaveDialog extends Window {
     }
 
     /**
-     * actualiza ruta y lista
+     * Nuevo constructor que pre-puebla el campo de nombre.
      */
+    public SaveDialog(Skin skin, FileSystemSim fs, Consumer<String> onSave, String defaultName) {
+        this(skin, fs, onSave);
+        nameField.setText(defaultName);
+        nameField.setMessageText(defaultName);
+    }
+
     private void refresh() {
         pathLabel.setText(fs.pwd());
         list.setItems(fs.ls().stream().filter(s -> s.endsWith("/")).toArray(String[]::new));
     }
 
-    /**
-     * centra al añadirse al Stage
-     */
     @Override
     public void setStage(Stage stage) {
         super.setStage(stage);
