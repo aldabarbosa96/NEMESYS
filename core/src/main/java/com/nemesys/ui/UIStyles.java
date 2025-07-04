@@ -75,6 +75,10 @@ public final class UIStyles {
         // ── Bisel 3D para botones ─────────────────────────────────
         sk.add("btn-up", new NinePatchDrawable(makeBtnBg(false)), Drawable.class);
         sk.add("btn-down", new NinePatchDrawable(makeBtnBg(true)), Drawable.class);
+        sk.add("btn-checked", new NinePatchDrawable(makeBtnChecked()), Drawable.class);
+        sk.add("btn-light", new NinePatchDrawable(makeBtnLight()), Drawable.class);
+        sk.add("btn-checked-light", new NinePatchDrawable(makeBtnCheckedLight()), Drawable.class);
+
 
         // ── Label styles ───────────────────────────────────────────
         sk.add("win95-label-black", new Label.LabelStyle(font14, Color.BLACK));
@@ -224,6 +228,62 @@ public final class UIStyles {
         pm.setColor(DARKSHDW);
         pm.drawLine(0, S - 1, S - 1, S - 1);
         pm.drawLine(S - 1, 0, S - 1, S - 2);
+        NinePatch np = new NinePatch(new Texture(pm), B, B, B, B);
+        pm.dispose();
+        return np;
+    }
+
+    private static NinePatch makeBtnChecked() {
+        int S = 32, B = 4;
+        Pixmap pm = new Pixmap(S, S, Format.RGBA8888);
+        // fondo plano FACE
+        pm.setColor(Color.valueOf("C0C0C0"));
+        pm.fill();
+        // bisel hundido: top/left en SHADOW, bottom/right en HILITE
+        pm.setColor(Color.valueOf("808080")); // SHADOW
+        pm.drawLine(0, 0, S - 2, 0);
+        pm.drawLine(0, 0, 0, S - 2);
+        pm.setColor(Color.valueOf("FFFFFF")); // HILITE
+        pm.drawLine(0, S - 1, S - 1, S - 1);
+        pm.drawLine(S - 1, 0, S - 1, S - 1);
+        NinePatch np = new NinePatch(new Texture(pm), B, B, B, B);
+        pm.dispose();
+        return np;
+    }
+
+    private static NinePatch makeBtnLight() {
+        int S = 32, B = 4;
+        Pixmap pm = new Pixmap(S, S, Format.RGBA8888);
+
+        pm.setColor(Color.valueOf("D0D0D0")); // fondo gris claro
+        pm.fill();
+
+        // BIS**EL SALIENTE**: hilite arriba/izq, darkshdw abajo/der
+        pm.setColor(Color.valueOf("FFFFFF")); // HILITE
+        pm.drawLine(0, 0, S - 2, 0);
+        pm.drawLine(0, 0, 0, S - 2);
+        pm.setColor(Color.valueOf("404040")); // DARKSHDW
+        pm.drawLine(0, S - 1, S - 1, S - 1);
+        pm.drawLine(S - 1, 0, S - 1, S - 2);
+
+        NinePatch np = new NinePatch(new Texture(pm), B, B, B, B);
+        pm.dispose();
+        return np;
+    }
+
+    private static NinePatch makeBtnCheckedLight() {
+        int S = 32, B = 4;
+        Pixmap pm = new Pixmap(S, S, Format.RGBA8888);
+        // fondo más clarito que FACE
+        pm.setColor(Color.valueOf("D0D0D0"));
+        pm.fill();
+        // bisel hundido: top/left en SHADOW, bottom/right en HILITE
+        pm.setColor(SHADOW);
+        pm.drawLine(0, 0, S - 2, 0);
+        pm.drawLine(0, 0, 0, S - 2);
+        pm.setColor(HILITE);
+        pm.drawLine(0, S - 1, S - 1, S - 1);
+        pm.drawLine(S - 1, 0, S - 1, S - 1);
         NinePatch np = new NinePatch(new Texture(pm), B, B, B, B);
         pm.dispose();
         return np;

@@ -1,10 +1,9 @@
-// File: core/src/main/java/com/nemesys/ui/WindowManager.java
 package com.nemesys.ui;
 
+import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.*;
-import com.badlogic.gdx.scenes.scene2d.ui.TextButton.TextButtonStyle;
 import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
 import com.nemesys.fs.FileSystemSim;
 import com.nemesys.fs.VirtualFile;
@@ -187,14 +186,25 @@ public final class WindowManager {
     }
 
     private void registerToggleStyle() {
-        if (skin.has("win95-toggle", TextButtonStyle.class)) return;
-        TextButtonStyle t = new TextButtonStyle(skin.getDrawable("face"),   // up
-            skin.getDrawable("shadow"), // down
-            skin.getDrawable("shadow"), // checked
-            skin.getFont("font-win95"));
-        t.fontColor = com.badlogic.gdx.graphics.Color.BLACK;
-        t.downFontColor = com.badlogic.gdx.graphics.Color.BLACK;
-        t.checkedFontColor = com.badlogic.gdx.graphics.Color.BLACK;
-        skin.add("win95-toggle", t);
+        if (skin.has("win95-toggle", TextButton.TextButtonStyle.class)) return;
+
+        TextButton.TextButtonStyle toggle = new TextButton.TextButtonStyle();
+
+        // Ventana visible → botón hundido y clarito
+        toggle.up = skin.getDrawable("btn-checked-light");
+        // Pulsación momentánea
+        toggle.down = skin.getDrawable("btn-down");
+        // Ventana minimizada → bevel normal (igual que Inicio)
+        toggle.checked = skin.getDrawable("btn-up");
+        toggle.checkedOver = skin.getDrawable("btn-up");
+
+        toggle.font = skin.getFont("font-win95");
+        toggle.fontColor = Color.BLACK;
+        toggle.downFontColor = Color.BLACK;
+        toggle.checkedFontColor = Color.BLACK;
+
+        skin.add("win95-toggle", toggle);
     }
+
+
 }
