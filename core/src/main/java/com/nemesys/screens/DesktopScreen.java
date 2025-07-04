@@ -4,6 +4,8 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.math.Vector2;
+import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.*;
 import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
@@ -48,20 +50,17 @@ public final class DesktopScreen implements Screen {
         Table desktopIcons = new Table();
         desktopIcons.setFillParent(true);
         desktopIcons.top().left();
-        // espaciado reducido
         desktopIcons.defaults().pad(15).padLeft(20).align(Align.center);
 
-        // Papelera
         ImageButton recycle = new ImageButton(skin, "trash");
         recycle.addListener(new ChangeListener() {
             @Override
-            public void changed(ChangeEvent event, com.badlogic.gdx.scenes.scene2d.Actor actor) {
+            public void changed(ChangeEvent event, Actor actor) {
                 wm.open(AppType.RECYCLE_BIN);
             }
         });
         desktopIcons.add(recycle).size(72, 72).row();
-        desktopIcons.add(new Label("Papelera", skin)).padTop(-10).row();
-
+        desktopIcons.add(new Label("Papelera", skin)).padTop(-18).row();
         stage.addActor(desktopIcons);
 
         // Reloj y Taskbar
@@ -69,11 +68,10 @@ public final class DesktopScreen implements Screen {
         Table taskButtons = buildTaskbar();
         wm = new WindowManager(stage, skin, taskButtons);
 
-        // Start menu
+        // Start menu (invisible al inicio)
         startMenu = new StartMenu(skin, wm::open);
         startMenu.setVisible(false);
         stage.addActor(startMenu);
-        startMenu.setPosition(0, BAR_H);
 
         Gdx.input.setInputProcessor(stage);
         updateClock();
@@ -90,12 +88,12 @@ public final class DesktopScreen implements Screen {
         bar.getBackground().setMinHeight(BAR_H);
         bar.align(Align.left);
 
-        // Inicio
+        // Botón Inicio
         TextButton startBtn = new TextButton("Inicio", skin, "start-btn");
         startBtn.pad(2, 10, 2, 10);
         bar.add(startBtn).width(90).padLeft(8);
 
-        // Ventanas
+        // Espacio para iconos de ventanas
         Table btnBar = new Table();
         btnBar.left();
         bar.add(btnBar).expandX().left();
@@ -105,11 +103,27 @@ public final class DesktopScreen implements Screen {
 
         root.add(bar).growX().height(BAR_H);
 
-        startBtn.addListener(e -> {
-            if ("touchDown".equals(e.toString())) {
-                startMenu.setVisible(!startMenu.isVisible());
+        // Listener que reposiciona el StartMenu
+        startBtn.addListener(new ChangeListener() {
+            @Override
+            public void changed(ChangeEvent event, Actor actor) {
+                boolean showing = startMenu.isVisible();
+                if (!showing) {
+                    // 1) Empacamos para calcular prefHeight
+                    startMenu.pack();
+                    // 2) Opcional: forzamos un ancho fijo
+                    startMenu.setWidth(200f);
+                    // 3) Calculamos posición del botón en coordenadas de stage
+                    Vector2 pos = new Vector2(0, 0);
+                    startBtn.localToStageCoordinates(pos);
+                    float x = pos.x;
+                    float y = pos.y + startBtn.getHeight();
+                    // 4) Colocamos el menú justo encima del botón
+                    startMenu.setPosition(x, y);
+                }
+                // 5) Alternamos visibilidad
+                startMenu.setVisible(!showing);
             }
-            return true;
         });
 
         return btnBar;
@@ -122,13 +136,11 @@ public final class DesktopScreen implements Screen {
     @Override
     public void render(float delta) {
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
-
         acc += delta;
         if (acc >= 1f) {
             acc = 0;
             updateClock();
         }
-
         stage.act(delta);
         stage.draw();
     }
