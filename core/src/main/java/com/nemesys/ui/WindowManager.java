@@ -107,10 +107,10 @@ public final class WindowManager {
     private BaseWindow create(AppType type, String path) {
         switch (type) {
             case TERMINAL:
-                return new TerminalWindow(skin, this, fs);
+                return new TerminalWindow(skin, this, new FileSystemSim());
 
             case FILE_EXPLORER:
-                return new FileExplorerWindow(skin, this, fs);
+                return new FileExplorerWindow(skin, this, new FileSystemSim());
 
             case TEXT_EDITOR:
                 String file = (path != null && !path.trim().isEmpty()) ? path : null;

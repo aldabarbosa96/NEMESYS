@@ -1,74 +1,50 @@
 package com.nemesys.ui;
 
-import com.badlogic.gdx.scenes.scene2d.Actor;
-import com.badlogic.gdx.scenes.scene2d.InputEvent;
+import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.*;
-import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.nemesys.fs.FileSystemSim;
 
-/**
- * Ventana de edición de texto estilo Bloc-de-Notas.
- * • “Save”     → icono, guarda en la ruta actual (o abre diálogo si es nuevo) y permanece abierta.
- * • “Save As”  → icono, guarda siempre en nueva ruta y cierra el editor.
- */
 public final class TextEditorWindow extends BaseWindow {
-
     private final FileSystemSim fs;
-    private final Skin skin;
-    private final WindowManager manager;
-
-    /* estado documento ------------------------------------------------------ */
-    private String currentPath;          // null → aún sin nombre
+    private final WindowManager mgr;
+    private String currentPath;
     private final TextArea area;
     private final Label titleLabel;
 
     public TextEditorWindow(Skin skin, WindowManager mgr, FileSystemSim fs, String path) {
         super("Editor", skin, WindowManager.AppType.TEXT_EDITOR, mgr);
         this.fs = fs;
-        this.skin = skin;
-        this.manager = mgr;
-        this.currentPath = path;
+        this.mgr = mgr;
+        this.currentPath = (path != null && !path.trim().isEmpty()) ? path : null;
 
-        /* ── layout básico ── */
         defaults().pad(4f);
 
-        /* barra superior ---------------------------------------------------- */
+        // barra de iconos Save / Save As
         Table bar = new Table();
-        titleLabel = new Label((currentPath == null) ? "Untitled.txt" : currentPath, skin);
-
-        ImageButton saveBtn = new ImageButton(skin, "save");
-        ImageButton saveAsBtn = new ImageButton(skin, "saveAs");
+        titleLabel = new Label(currentPath == null ? "Untitled.txt" : currentPath, skin);
+        ImageButton save = new ImageButton(skin, "save");
+        ImageButton saveAs = new ImageButton(skin, "saveAs");
 
         bar.add(titleLabel).expandX().left();
-        bar.add(saveBtn).padRight(4);
-        bar.add(saveAsBtn);
+        bar.add(save).padRight(4f);
+        bar.add(saveAs);
 
-        /* área de texto ----------------------------------------------------- */
+        // área de texto
         area = new TextArea(loadText(), skin);
         ScrollPane scroll = new ScrollPane(area, skin);
         scroll.setFadeScrollBars(false);
 
         add(bar).growX().row();
         add(scroll).prefWidth(460).prefHeight(260).grow();
+
         pack();
         setPosition(180, 140);
 
-        // Botón X: cerrar totalmente (remueve de ventana y taskbar)
-        Actor xBtn = getTitleTable().getChildren().peek();
-        xBtn.clearListeners();
-        xBtn.addListener(new ClickListener() {
-            @Override
-            public void clicked(InputEvent ev, float x, float y) {
-                manager.close(WindowManager.AppType.TEXT_EDITOR);
-            }
-        });
-
-        /* ── acciones de los botones ── */
-        saveBtn.addListener(e -> {
+        // listeners de guardar
+        save.addListener(e -> {
             if (!e.toString().equals("touchDown")) return false;
-            if (currentPath == null) {
-                openSaveDialog(false);
-            } else {
+            if (currentPath == null) openSaveDialog(false);
+            else {
                 int idx = Math.max(currentPath.lastIndexOf('\\'), currentPath.lastIndexOf('/'));
                 if (idx >= 0) fs.cd("..");
                 String name = idx >= 0 ? currentPath.substring(idx + 1) : currentPath;
@@ -77,32 +53,37 @@ public final class TextEditorWindow extends BaseWindow {
             return true;
         });
 
-        saveAsBtn.addListener(e -> {
+        saveAs.addListener(e -> {
             if (!e.toString().equals("touchDown")) return false;
             openSaveDialog(true);
             return true;
         });
     }
 
-    /* carga inicial del archivo (si existe) */
     private String loadText() {
         if (currentPath == null) return "";
-        String txt = fs.cat(currentPath);
-        return txt == null ? "" : txt;
+        String t = fs.cat(currentPath);
+        return t == null ? "" : t;
     }
 
-    /**
-     * @param closeAfterSave si es true, cierra la ventana tras guardar (Save As).
-     */
-    private void openSaveDialog(boolean closeAfterSave) {
-        SaveDialog dlg = new SaveDialog(skin, fs, fileName -> {
+    private void openSaveDialog(boolean closeAfter) {
+        SaveDialog dlg = new SaveDialog(getSkin(), fs, fileName -> {
             currentPath = fs.pwd() + "\\" + fileName;
             fs.overwrite(fileName, area.getText());
             titleLabel.setText(currentPath);
-            if (closeAfterSave) {
-                manager.close(WindowManager.AppType.TEXT_EDITOR);
-            }
+            if (closeAfter) mgr.close(WindowManager.AppType.TEXT_EDITOR);
         });
         getStage().addActor(dlg);
+    }
+
+    /**
+     * Pide foco al área de texto para que salga el cursor parpadeante
+     */
+    @Override
+    public void setStage(Stage stage) {
+        super.setStage(stage);
+        if (stage != null) {
+            stage.setKeyboardFocus(area);
+        }
     }
 }
