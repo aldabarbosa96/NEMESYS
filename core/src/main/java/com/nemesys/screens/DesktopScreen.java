@@ -7,7 +7,13 @@ import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.Stage;
-import com.badlogic.gdx.scenes.scene2d.ui.*;
+import com.badlogic.gdx.scenes.scene2d.ui.Container;
+import com.badlogic.gdx.scenes.scene2d.ui.Image;
+import com.badlogic.gdx.scenes.scene2d.ui.ImageButton;
+import com.badlogic.gdx.scenes.scene2d.ui.Label;
+import com.badlogic.gdx.scenes.scene2d.ui.Table;
+import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
+import com.badlogic.gdx.scenes.scene2d.ui.Skin;
 import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
 import com.badlogic.gdx.utils.Align;
 import com.badlogic.gdx.utils.Scaling;
@@ -16,7 +22,6 @@ import com.nemesys.NemesysGame;
 import com.nemesys.ui.StartMenu;
 import com.nemesys.ui.UIStyles;
 import com.nemesys.ui.WindowManager;
-import com.nemesys.ui.WindowManager.AppType;
 
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
@@ -34,10 +39,10 @@ public final class DesktopScreen implements Screen {
     private static final float BAR_H = 48f;
     private static final DateTimeFormatter FMT = DateTimeFormatter.ofPattern("HH:mm");
 
-    public DesktopScreen(NemesysGame g) {
-        game = g;
-        stage = new Stage(new ScreenViewport(), g.batch);
-        skin = UIStyles.create();
+    public DesktopScreen(NemesysGame game) {
+        this.game = game;
+        this.stage = new Stage(new ScreenViewport(), game.batch);
+        this.skin = UIStyles.create();
 
         // Wallpaper
         Texture wall = new Texture(Gdx.files.internal("wallpaper1.png"));
@@ -46,34 +51,38 @@ public final class DesktopScreen implements Screen {
         bg.setScaling(Scaling.stretch);
         stage.addActor(bg);
 
-        // Íconos de escritorio
+        // Desktop icons
         Table desktopIcons = new Table();
         desktopIcons.setFillParent(true);
         desktopIcons.top().left();
         desktopIcons.defaults().pad(15).padLeft(20).align(Align.center);
-
         ImageButton recycle = new ImageButton(skin, "trash");
         recycle.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
-                wm.open(AppType.RECYCLE_BIN);
+                wm.open(WindowManager.AppType.RECYCLE_BIN);
             }
         });
         desktopIcons.add(recycle).size(72, 72).row();
         desktopIcons.add(new Label("Papelera", skin)).padTop(-18).row();
         stage.addActor(desktopIcons);
 
-        // Reloj y Taskbar
-        clock = new Label("", skin);
-        Table taskButtons = buildTaskbar();
-        wm = new WindowManager(stage, skin, taskButtons);
+        // Clock label (will be wrapped in container later)
+        this.clock = new Label("", skin);
 
-        // Start menu (invisible al inicio)
-        startMenu = new StartMenu(skin, wm::open);
+        // Build taskbar (and clock container)
+        Table taskButtons = buildTaskbar();
+
+        // Window manager
+        this.wm = new WindowManager(stage, skin, taskButtons);
+
+        // Start menu
+        this.startMenu = new StartMenu(skin, wm::open);
         startMenu.setVisible(false);
         stage.addActor(startMenu);
 
         Gdx.input.setInputProcessor(stage);
+
         updateClock();
     }
 
@@ -88,40 +97,38 @@ public final class DesktopScreen implements Screen {
         bar.getBackground().setMinHeight(BAR_H);
         bar.align(Align.left);
 
-        // Botón Inicio
+        // Start button
         TextButton startBtn = new TextButton("Inicio", skin, "start-btn");
         startBtn.pad(2, 10, 2, 10);
         bar.add(startBtn).width(90).padLeft(8);
 
-        // Espacio para iconos de ventanas
+        // Window buttons container
         Table btnBar = new Table();
         btnBar.left();
         bar.add(btnBar).expandX().left();
 
-        // Reloj
-        bar.add(clock).padRight(10);
+        // Clock wrapped in bevel border
+        Container<Label> clockC = new Container<>(clock);
+        clockC.background(skin.getDrawable("btn-up"));
+        clockC.pad(2, 8, 2, 8);
+        bar.add(clockC).padRight(10);
 
         root.add(bar).growX().height(BAR_H);
 
-        // Listener que reposiciona el StartMenu
+        // Start button listener
         startBtn.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
                 boolean showing = startMenu.isVisible();
                 if (!showing) {
-                    // 1) Empacamos para calcular prefHeight
                     startMenu.pack();
-                    // 2) Opcional: forzamos un ancho fijo
                     startMenu.setWidth(200f);
-                    // 3) Calculamos posición del botón en coordenadas de stage
                     Vector2 pos = new Vector2(0, 0);
                     startBtn.localToStageCoordinates(pos);
                     float x = pos.x;
                     float y = pos.y + startBtn.getHeight();
-                    // 4) Colocamos el menú justo encima del botón
                     startMenu.setPosition(x, y);
                 }
-                // 5) Alternamos visibilidad
                 startMenu.setVisible(!showing);
             }
         });
@@ -138,7 +145,7 @@ public final class DesktopScreen implements Screen {
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
         acc += delta;
         if (acc >= 1f) {
-            acc = 0;
+            acc = 0f;
             updateClock();
         }
         stage.act(delta);
@@ -146,8 +153,8 @@ public final class DesktopScreen implements Screen {
     }
 
     @Override
-    public void resize(int w, int h) {
-        stage.getViewport().update(w, h, true);
+    public void resize(int width, int height) {
+        stage.getViewport().update(width, height, true);
     }
 
     @Override

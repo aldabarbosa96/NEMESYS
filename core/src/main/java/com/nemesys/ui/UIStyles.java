@@ -9,20 +9,19 @@ import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.graphics.g2d.NinePatch;
 import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator;
-import com.badlogic.gdx.scenes.scene2d.ui.*;
+import com.badlogic.gdx.scenes.scene2d.ui.ImageTextButton;
+import com.badlogic.gdx.scenes.scene2d.ui.Label;
+import com.badlogic.gdx.scenes.scene2d.ui.List;
+import com.badlogic.gdx.scenes.scene2d.ui.ScrollPane;
+import com.badlogic.gdx.scenes.scene2d.ui.Skin;
+import com.badlogic.gdx.scenes.scene2d.ui.TextField;
+import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
+import com.badlogic.gdx.scenes.scene2d.ui.Window;
+import com.badlogic.gdx.scenes.scene2d.ui.ImageButton;
 import com.badlogic.gdx.scenes.scene2d.utils.Drawable;
 import com.badlogic.gdx.scenes.scene2d.utils.NinePatchDrawable;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
-import com.badlogic.gdx.scenes.scene2d.ui.TextButton.TextButtonStyle;
-import com.badlogic.gdx.scenes.scene2d.ui.ImageButton.ImageButtonStyle;
 
-/**
- * Skin Win-95 pixel-perfect para NEMESYS.
- * - estilo "default" para TextButton,
- * - "terminal-label" en verde,
- * - iconos estándar 24×24,
- * - icono "trash" sin fondo 48×48.
- */
 public final class UIStyles {
 
     private static final Color FACE = Color.valueOf("C0C0C0");
@@ -55,7 +54,8 @@ public final class UIStyles {
 
         // ── Cursores / fondos ─────────────────────────────────────
         sk.add("cursor", flat(Color.BLACK), Drawable.class);
-        sk.add("taskbar", panel(Color.valueOf("808080")), Drawable.class);
+        // Taskbar usa ahora exactamente el gris FACE (mismo que botón Inicio)
+        sk.add("taskbar", flat(FACE), Drawable.class);
         sk.add("menu-bg", panel(FACE), Drawable.class);
         sk.add("title", sk.getDrawable("blue"), Drawable.class);
 
@@ -67,13 +67,14 @@ public final class UIStyles {
         sk.add("icon-restore", icon("icons/restore.png", 30, 28), Drawable.class);
         sk.add("icon-delete", icon("icons/delete.png", 30, 28), Drawable.class);
         sk.add("trash", icon("icons/papelera.png", 75, 75), Drawable.class);
+        // restauramos los 25×25 originales para Explorer/Terminal/Editor
         sk.add("icon-explorer", icon("icons/explorador.png", 25, 25), Drawable.class);
         sk.add("icon-terminal", icon("icons/terminal.png", 25, 25), Drawable.class);
         sk.add("icon-editor", icon("icons/editorTexto.png", 25, 25), Drawable.class);
 
         // ── Bisel 3D para botones ─────────────────────────────────
-        sk.add("btn-up", bevel(FACE, HILITE, DARKSHDW), Drawable.class);
-        sk.add("btn-down", bevel(FACE, DARKSHDW, HILITE), Drawable.class);
+        sk.add("btn-up", new NinePatchDrawable(makeBtnBg(false)), Drawable.class);
+        sk.add("btn-down", new NinePatchDrawable(makeBtnBg(true)), Drawable.class);
 
         // ── Label styles ───────────────────────────────────────────
         sk.add("win95-label-black", new Label.LabelStyle(font14, Color.BLACK));
@@ -90,45 +91,43 @@ public final class UIStyles {
         sk.add("default", winStyle); // para Window también
 
         // ── TextButton style Win95 por defecto ────────────────────
-        NinePatchDrawable up = new NinePatchDrawable(makeBtnBg(false));
-        NinePatchDrawable down = new NinePatchDrawable(makeBtnBg(true));
-        TextButtonStyle btnStyle = new TextButtonStyle(up, down, null, sk.getFont("font-win95"));
+        TextButton.TextButtonStyle btnStyle = new TextButton.TextButtonStyle(sk.getDrawable("btn-up"), sk.getDrawable("btn-down"), null, sk.getFont("font-win95"));
         btnStyle.fontColor = TEXT;
         sk.add("win95", btnStyle);
         sk.add("start-btn", btnStyle);
         sk.add("win95-window", btnStyle);
-        sk.add("default", btnStyle, TextButtonStyle.class);
+        sk.add("default", btnStyle, TextButton.TextButtonStyle.class);
 
         // ── ImageButton styles ────────────────────────────────────
-        ImageButtonStyle imgBase = new ImageButtonStyle();
+        ImageButton.ImageButtonStyle imgBase = new ImageButton.ImageButtonStyle();
         imgBase.up = sk.getDrawable("face");
         imgBase.down = sk.getDrawable("shadow");
 
-        ImageButtonStyle back = new ImageButtonStyle(imgBase);
+        ImageButton.ImageButtonStyle back = new ImageButton.ImageButtonStyle(imgBase);
         back.imageUp = sk.getDrawable("icon-back");
         sk.add("nav-back", back);
 
-        ImageButtonStyle home = new ImageButtonStyle(imgBase);
+        ImageButton.ImageButtonStyle home = new ImageButton.ImageButtonStyle(imgBase);
         home.imageUp = sk.getDrawable("icon-home");
         sk.add("nav-home", home);
 
-        ImageButtonStyle save = new ImageButtonStyle(imgBase);
+        ImageButton.ImageButtonStyle save = new ImageButton.ImageButtonStyle(imgBase);
         save.imageUp = sk.getDrawable("icon-save");
         sk.add("save", save);
 
-        ImageButtonStyle saveAs = new ImageButtonStyle(imgBase);
+        ImageButton.ImageButtonStyle saveAs = new ImageButton.ImageButtonStyle(imgBase);
         saveAs.imageUp = sk.getDrawable("icon-saveAs");
         sk.add("saveAs", saveAs);
 
-        ImageButtonStyle restore = new ImageButtonStyle(imgBase);
+        ImageButton.ImageButtonStyle restore = new ImageButton.ImageButtonStyle(imgBase);
         restore.imageUp = sk.getDrawable("icon-restore");
         sk.add("restore", restore);
 
-        ImageButtonStyle delete = new ImageButtonStyle(imgBase);
+        ImageButton.ImageButtonStyle delete = new ImageButton.ImageButtonStyle(imgBase);
         delete.imageUp = sk.getDrawable("icon-delete");
         sk.add("delete", delete);
 
-        ImageButtonStyle trashBtn = new ImageButtonStyle();
+        ImageButton.ImageButtonStyle trashBtn = new ImageButton.ImageButtonStyle();
         trashBtn.imageUp = sk.getDrawable("trash");
         trashBtn.imageDown = sk.getDrawable("trash");
         sk.add("trash", trashBtn);
@@ -139,9 +138,10 @@ public final class UIStyles {
         TextField.TextFieldStyle tfStyle = new TextField.TextFieldStyle(font14, TEXT, sk.getDrawable("black"), null, sk.getDrawable("white"));
         sk.add("default", tfStyle);
 
-        // ── NUEVO: Style para ítems del Start Menu ────────────────
+        // ── Start Menu items & icon styles ────────────────────────
         sk.add("menu-item-up", flat(FACE), Drawable.class);
         sk.add("menu-item-over", flat(TITLE_BG), Drawable.class);
+
         ImageTextButton.ImageTextButtonStyle baseMenuItem = new ImageTextButton.ImageTextButtonStyle();
         baseMenuItem.up = sk.getDrawable("menu-item-up");
         baseMenuItem.over = sk.getDrawable("menu-item-over");
@@ -152,7 +152,6 @@ public final class UIStyles {
         baseMenuItem.downFontColor = Color.WHITE;
         sk.add("menu-item", baseMenuItem);
 
-        // ── NUEVO: estilos con iconos ─────────────────────────────
         ImageTextButton.ImageTextButtonStyle explorerStyle = new ImageTextButton.ImageTextButtonStyle(baseMenuItem);
         explorerStyle.imageUp = sk.getDrawable("icon-explorer");
         explorerStyle.imageOver = sk.getDrawable("icon-explorer");
@@ -174,7 +173,7 @@ public final class UIStyles {
         return sk;
     }
 
-    // ───────── Métodos auxiliares ─────────
+    // ───────── Métodos auxiliares ───────────────────────────────
 
     private static Drawable flat(Color c) {
         Pixmap p = new Pixmap(1, 1, Format.RGBA8888);
@@ -194,22 +193,6 @@ public final class UIStyles {
         NinePatch np = new NinePatch(new Texture(p), 1, 1, 1, 1);
         p.dispose();
         return new NinePatchDrawable(np);
-    }
-
-    private static Drawable bevel(Color face, Color tl, Color br) {
-        int S = 24;
-        Pixmap p = new Pixmap(S, S, Format.RGBA8888);
-        p.setColor(face);
-        p.fill();
-        p.setColor(tl);
-        p.drawLine(0, 0, S - 2, 0);
-        p.drawLine(0, 0, 0, S - 2);
-        p.setColor(br);
-        p.drawLine(S - 1, 1, S - 1, S - 1);
-        p.drawLine(1, S - 1, S - 1, S - 1);
-        TextureRegionDrawable d = new TextureRegionDrawable(new Texture(p));
-        p.dispose();
-        return d;
     }
 
     private static NinePatch makeFrame() {
