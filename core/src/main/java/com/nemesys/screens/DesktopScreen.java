@@ -70,8 +70,8 @@ public final class DesktopScreen implements Screen {
 
         /* ───── Botón Inicio ───── */
         TextButton startBtn = new TextButton("Inicio", skin, "start-btn");
-        startBtn.pad(4, 10, 4, 10);          // ↑ padding extra arriba/abajo/left/right
-        bar.add(startBtn).width(90).padLeft(4);
+        startBtn.pad(2, 10, 2, 10);
+        bar.add(startBtn).width(90).padLeft(8);
 
         /* ───── Botones de ventana ───── */
         Table btnBar = new Table();
