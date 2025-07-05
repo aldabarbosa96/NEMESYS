@@ -93,7 +93,7 @@ public abstract class BaseWindow extends Window {
             case TEXT_EDITOR:
                 return "icon-editor";
             case RECYCLE_BIN:
-                return "trash";
+                return "trash-small";
             default:
                 return "icon-logo";
         }

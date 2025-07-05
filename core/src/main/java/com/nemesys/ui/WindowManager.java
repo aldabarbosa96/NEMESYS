@@ -223,7 +223,7 @@ public final class WindowManager {
         if (w instanceof TerminalWindow) return "icon-terminal";
         if (w instanceof FileExplorerWindow) return "icon-explorer";
         if (w instanceof TextEditorWindow) return "icon-editor";
-        if (w instanceof RecycleBinWindow) return "trash";
+        if (w instanceof RecycleBinWindow) return "trash-small";
         return "icon-logo";
     }
 }

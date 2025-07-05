@@ -31,7 +31,7 @@ public final class DesktopScreen implements Screen {
     private final Label clock;
     private float acc;
 
-    private static final float BAR_H = 48f;
+    private static final float BAR_H = 46f;
     private static final DateTimeFormatter FMT = DateTimeFormatter.ofPattern("HH:mm");
 
     public DesktopScreen(NemesysGame game) {
@@ -60,10 +60,10 @@ public final class DesktopScreen implements Screen {
                 wm.open(WindowManager.AppType.RECYCLE_BIN);
             }
         });
-        desktopIcons.add(recycle).size(72, 72).row();
+        desktopIcons.add(recycle).size(62, 62).row();
 
         Label recycleLbl = new Label("Papelera", skin, "desktop-icon-label");
-        desktopIcons.add(recycleLbl).padTop(-20).row();
+        desktopIcons.add(recycleLbl).padTop(-15).row();
 
         stage.addActor(desktopIcons);
 
@@ -99,9 +99,9 @@ public final class DesktopScreen implements Screen {
 
         // Start button
         ImageTextButton startBtn = new ImageTextButton("Inicio", skin, "start-btn-img");
-        startBtn.getImageCell().padRight(4f);
-        startBtn.pad(2, 5, 2, 5);
-        bar.add(startBtn).width(90).padLeft(8);
+        startBtn.getImageCell().padRight(4f).padLeft(-5);
+        startBtn.pad(2);
+        bar.add(startBtn).width(90).padLeft(2).height(BAR_H - 7.5f);
 
         // Window buttons container
         Table btnBar = new Table();
@@ -110,9 +110,9 @@ public final class DesktopScreen implements Screen {
 
         // Clock wrapped in bevel border
         Container<Label> clockC = new Container<>(clock);
-        clockC.background(skin.getDrawable("btn-up"));
+        clockC.background(skin.getDrawable("btn-checked"));
         clockC.pad(2, 8, 2, 8);
-        bar.add(clockC).padRight(10);
+        bar.add(clockC).padRight(2).height(BAR_H - 7.5f);
 
         root.add(bar).growX().height(BAR_H);
 

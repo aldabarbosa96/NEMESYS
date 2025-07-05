@@ -35,7 +35,7 @@ public final class UIStyles {
         // Bold 14px con tracking negativo para negrita más compacta
         FreeTypeFontGenerator boldGen = new FreeTypeFontGenerator(Gdx.files.internal("IBMPlexSans-Bold.ttf"));
         FreeTypeFontParameter bp = new FreeTypeFontParameter();
-        bp.size = 14;
+        bp.size = 17;
         bp.spaceX = -1;
         bp.minFilter = TextureFilter.Nearest;
         bp.magFilter = TextureFilter.Nearest;
@@ -57,7 +57,7 @@ public final class UIStyles {
 
         // ── Fondos / cursores ──────────────────────────────────────
         sk.add("cursor", flat(Color.BLACK), Drawable.class);
-        sk.add("taskbar", flat(FACE), Drawable.class);
+        sk.add("taskbar", panel(FACE), Drawable.class);
         sk.add("menu-bg", panel(FACE), Drawable.class);
         sk.add("title", sk.getDrawable("blue"), Drawable.class);
 
@@ -68,11 +68,12 @@ public final class UIStyles {
         sk.add("icon-saveAs", icon("icons/saveAs.png", 28, 28), Drawable.class);
         sk.add("icon-restore", icon("icons/restore.png", 30, 28), Drawable.class);
         sk.add("icon-delete", icon("icons/delete.png", 30, 28), Drawable.class);
-        sk.add("trash", icon("icons/papelera.png", 75, 75), Drawable.class);
+        sk.add("trash", icon("icons/papelera.png", 60, 60), Drawable.class);
+        sk.add("trash-small", icon("icons/papelera.png", 25, 25), Drawable.class);
         sk.add("icon-explorer", icon("icons/explorador.png", 25, 25), Drawable.class);
         sk.add("icon-terminal", icon("icons/terminal.png", 25, 25), Drawable.class);
         sk.add("icon-editor", icon("icons/editorTexto.png", 25, 25), Drawable.class);
-        sk.add("icon-logo", icon("icons/logo.png", 25, 25), Drawable.class);
+        sk.add("icon-logo", icon("icons/logo.png", 26, 26), Drawable.class);
 
         // ── Bisel 3D botones ───────────────────────────────────────
         sk.add("btn-up", new NinePatchDrawable(makeBtnBg(false)), Drawable.class);
@@ -243,64 +244,103 @@ public final class UIStyles {
     }
 
     private static NinePatch makeBtnBg(boolean pressed) {
-        int S = 32, B = 4;
+        int S = 32, B = 5;                     // ← cap inset a 5px en vez de 4
         Pixmap pm = new Pixmap(S, S, Format.RGBA8888);
         pm.setColor(FACE);
         pm.fill();
+
+        // highlight (arriba/izquierda) más grueso
         pm.setColor(pressed ? SHADOW : HILITE);
         pm.drawLine(0, 0, S - 2, 0);
+        pm.drawLine(0, 1, S - 3, 1);
         pm.drawLine(0, 1, 0, S - 2);
+        pm.drawLine(1, 1, 1, S - 3);
+
+        // shadow (abajo/derecha) más grueso
         pm.setColor(DARKSHDW);
         pm.drawLine(0, S - 1, S - 1, S - 1);
-        pm.drawLine(S - 1, 0, S - 1, S - 2);
+        pm.drawLine(0, S - 2, S - 2, S - 2);
+        pm.drawLine(S - 1, 0, S - 1, S - 1);
+        pm.drawLine(S - 2, 1, S - 2, S - 2);
+
         NinePatch np = new NinePatch(new Texture(pm), B, B, B, B);
         pm.dispose();
         return np;
     }
 
+    // 2) Botones “checked” (toggled)
     private static NinePatch makeBtnChecked() {
-        int S = 32, B = 4;
+        int S = 32, B = 5;
         Pixmap pm = new Pixmap(S, S, Format.RGBA8888);
         pm.setColor(FACE);
         pm.fill();
+
+        // shadow en vez de highlight
         pm.setColor(SHADOW);
         pm.drawLine(0, 0, S - 2, 0);
+        pm.drawLine(0, 1, S - 3, 1);
         pm.drawLine(0, 0, 0, S - 2);
+        pm.drawLine(1, 1, 1, S - 3);
+
+        // highlight abajo/derecha
         pm.setColor(HILITE);
         pm.drawLine(0, S - 1, S - 1, S - 1);
+        pm.drawLine(0, S - 2, S - 2, S - 2);
         pm.drawLine(S - 1, 0, S - 1, S - 1);
+        pm.drawLine(S - 2, 1, S - 2, S - 2);
+
         NinePatch np = new NinePatch(new Texture(pm), B, B, B, B);
         pm.dispose();
         return np;
     }
 
+    // 3) Botones “light” (fondo más claro)
     private static NinePatch makeBtnLight() {
-        int S = 32, B = 4;
+        int S = 32, B = 5;
         Pixmap pm = new Pixmap(S, S, Format.RGBA8888);
         pm.setColor(Color.valueOf("D0D0D0"));
         pm.fill();
+
+        // highlight
         pm.setColor(HILITE);
         pm.drawLine(0, 0, S - 2, 0);
+        pm.drawLine(0, 1, S - 3, 1);
         pm.drawLine(0, 0, 0, S - 2);
+        pm.drawLine(1, 1, 1, S - 3);
+
+        // shadow
         pm.setColor(DARKSHDW);
         pm.drawLine(0, S - 1, S - 1, S - 1);
-        pm.drawLine(S - 1, 0, S - 1, S - 2);
+        pm.drawLine(0, S - 2, S - 2, S - 2);
+        pm.drawLine(S - 1, 0, S - 1, S - 1);
+        pm.drawLine(S - 2, 1, S - 2, S - 2);
+
         NinePatch np = new NinePatch(new Texture(pm), B, B, B, B);
         pm.dispose();
         return np;
     }
 
+    // 4) Botones “checked light”
     private static NinePatch makeBtnCheckedLight() {
-        int S = 32, B = 4;
+        int S = 32, B = 5;
         Pixmap pm = new Pixmap(S, S, Format.RGBA8888);
         pm.setColor(Color.valueOf("D0D0D0"));
         pm.fill();
+
+        // shadow
         pm.setColor(SHADOW);
         pm.drawLine(0, 0, S - 2, 0);
+        pm.drawLine(0, 1, S - 3, 1);
         pm.drawLine(0, 0, 0, S - 2);
+        pm.drawLine(1, 1, 1, S - 3);
+
+        // highlight
         pm.setColor(HILITE);
         pm.drawLine(0, S - 1, S - 1, S - 1);
+        pm.drawLine(0, S - 2, S - 2, S - 2);
         pm.drawLine(S - 1, 0, S - 1, S - 1);
+        pm.drawLine(S - 2, 1, S - 2, S - 2);
+
         NinePatch np = new NinePatch(new Texture(pm), B, B, B, B);
         pm.dispose();
         return np;
