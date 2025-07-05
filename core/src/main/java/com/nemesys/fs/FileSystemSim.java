@@ -207,6 +207,7 @@ public final class FileSystemSim {
 
     private static Directory buildSampleTree() {
         Directory root = new Directory("");
+        root.dir("Desktop");
         Directory david = root.dir("users").dir("david");
         david.dir("docs").file("README", "txt", "Bienvenido a NEMESYS.");
         david.dir("pictures").file("wallpaper", "png", "<binary>");

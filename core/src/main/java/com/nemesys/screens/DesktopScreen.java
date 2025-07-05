@@ -2,14 +2,20 @@ package com.nemesys.screens;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Screen;
-import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.math.Vector2;
-import com.badlogic.gdx.scenes.scene2d.Actor;
+import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.Stage;
-import com.badlogic.gdx.scenes.scene2d.ui.*;
-import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
+import com.badlogic.gdx.scenes.scene2d.ui.Container;
+import com.badlogic.gdx.scenes.scene2d.ui.Image;
+import com.badlogic.gdx.scenes.scene2d.ui.ImageButton;
+import com.badlogic.gdx.scenes.scene2d.ui.ImageTextButton;
+import com.badlogic.gdx.scenes.scene2d.ui.Label;
+import com.badlogic.gdx.scenes.scene2d.ui.Skin;
+import com.badlogic.gdx.scenes.scene2d.ui.Table;
+import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
+import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 import com.badlogic.gdx.utils.Align;
 import com.badlogic.gdx.utils.Scaling;
 import com.badlogic.gdx.utils.viewport.ScreenViewport;
@@ -21,6 +27,10 @@ import com.nemesys.ui.WindowManager;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 
+/**
+ * Pantalla principal que simula el escritorio de NEMESYS OS.
+ * Dibuja fondo, iconos, taskbar y gestiona los clics sobre ellos.
+ */
 public final class DesktopScreen implements Screen {
 
     private final NemesysGame game;
@@ -29,6 +39,8 @@ public final class DesktopScreen implements Screen {
     private final WindowManager wm;
     private final StartMenu startMenu;
     private final Label clock;
+    private final Table desktopIcons;
+    private final Texture fileTexture;
     private float acc;
 
     private static final float BAR_H = 46f;
@@ -39,51 +51,81 @@ public final class DesktopScreen implements Screen {
         this.stage = new Stage(new ScreenViewport(), game.batch);
         this.skin = UIStyles.create();
 
-        // Wallpaper
+        // 1) Wallpaper
         Texture wall = new Texture(Gdx.files.internal("wallpaper3.png"));
         Image bg = new Image(wall);
         bg.setFillParent(true);
         bg.setScaling(Scaling.stretch);
         stage.addActor(bg);
 
-        // Desktop icons
-        Table desktopIcons = new Table();
+        // 2) Reloj
+        this.clock = new Label("", skin);
+
+        // 3) Barra de tareas (y su Start‐menu)
+        Table taskbarButtons = buildTaskbar();
+        this.wm = new WindowManager(stage, skin, taskbarButtons);
+
+        // 4) Situamos el FS “global” justo en C:\Desktop
+        wm.getFs().toRoot();
+        wm.getFs().cd("Desktop");
+
+        // 5) Pre‐cargamos la textura genérica de archivo
+        this.fileTexture = new Texture(Gdx.files.internal("icons/archivo.png"));
+
+        // 6) Creamos la tabla de iconos una sola vez
+        desktopIcons = new Table();
         desktopIcons.setFillParent(true);
         desktopIcons.top().left();
         desktopIcons.defaults().pad(15).padLeft(20).align(Align.center);
-
-        // Papelera icon + label en blanco
-        ImageButton recycle = new ImageButton(skin, "trash");
-        recycle.addListener(new ChangeListener() {
-            @Override
-            public void changed(ChangeEvent event, Actor actor) {
-                wm.open(WindowManager.AppType.RECYCLE_BIN);
-            }
-        });
-        desktopIcons.add(recycle).size(62, 62).row();
-
-        Label recycleLbl = new Label("Papelera", skin, "desktop-icon-label");
-        desktopIcons.add(recycleLbl).padTop(-15).row();
-
         stage.addActor(desktopIcons);
 
-        // Clock label (will be wrapped in container later)
-        this.clock = new Label("", skin);
+        // 7) Pintamos los iconos por primera vez
+        refreshDesktop();
 
-        // Build taskbar (and clock container)
-        Table taskButtons = buildTaskbar();
-
-        // Window manager
-        this.wm = new WindowManager(stage, skin, taskButtons);
-
-        // Start menu
+        // 8) Start menu
         this.startMenu = new StartMenu(skin, wm::open);
         startMenu.setVisible(false);
         stage.addActor(startMenu);
 
         Gdx.input.setInputProcessor(stage);
-
         updateClock();
+    }
+
+    /**
+     * Reconstruye los iconos del escritorio SOLO cuando cambie el FS
+     */
+    private void refreshDesktop() {
+        desktopIcons.clearChildren();
+
+        // — Papelera de reciclaje —
+        ImageButton recycle = new ImageButton(skin, "trash");
+        recycle.addListener(new ClickListener() {
+            @Override
+            public void clicked(InputEvent event, float x, float y) {
+                wm.open(WindowManager.AppType.RECYCLE_BIN);
+            }
+        });
+        desktopIcons.add(recycle).size(62, 62).row();
+        desktopIcons.add(new Label("Papelera", skin, "desktop-icon-label")).padTop(-15).row();
+
+        // — Archivos en C:\Desktop —
+        TextureRegionDrawable fileDrw = new TextureRegionDrawable(fileTexture);
+        for (String item : wm.getFs().ls()) {
+            if (item.endsWith("/")) continue;
+            ImageButton.ImageButtonStyle style = new ImageButton.ImageButtonStyle();
+            style.imageUp = fileDrw;
+            style.imageDown = fileDrw;
+            style.imageOver = fileDrw;
+            ImageButton fileBtn = new ImageButton(style);
+            fileBtn.addListener(new ClickListener() {
+                @Override
+                public void clicked(InputEvent event, float x, float y) {
+                    wm.openEditor(item, wm.getFs());
+                }
+            });
+            desktopIcons.add(fileBtn).size(62, 62).row();
+            desktopIcons.add(new Label(item, skin, "desktop-icon-label")).padTop(-15).row();
+        }
     }
 
     private Table buildTaskbar() {
@@ -97,18 +139,18 @@ public final class DesktopScreen implements Screen {
         bar.getBackground().setMinHeight(BAR_H);
         bar.align(Align.left);
 
-        // Start button
+        // — Start btn —
         ImageTextButton startBtn = new ImageTextButton("Inicio", skin, "start-btn-img");
         startBtn.getImageCell().padRight(4f).padLeft(-5);
         startBtn.pad(2);
         bar.add(startBtn).width(90).padLeft(2).height(BAR_H - 7.5f);
 
-        // Window buttons container
+        // — Ventanas abiertas —
         Table btnBar = new Table();
         btnBar.left();
         bar.add(btnBar).expandX().left();
 
-        // Clock wrapped in bevel border
+        // — Reloj —
         Container<Label> clockC = new Container<>(clock);
         clockC.background(skin.getDrawable("btn-checked"));
         clockC.pad(2, 8, 2, 8);
@@ -116,19 +158,17 @@ public final class DesktopScreen implements Screen {
 
         root.add(bar).growX().height(BAR_H);
 
-        // Start button listener
-        startBtn.addListener(new ChangeListener() {
+        // Toggle Start menu
+        startBtn.addListener(new ClickListener() {
             @Override
-            public void changed(ChangeEvent event, Actor actor) {
+            public void clicked(InputEvent e, float x, float y) {
                 boolean showing = startMenu.isVisible();
                 if (!showing) {
                     startMenu.pack();
                     startMenu.setWidth(200f);
-                    Vector2 pos = new Vector2(0, 0);
+                    Vector2 pos = new Vector2();
                     startBtn.localToStageCoordinates(pos);
-                    float x = pos.x;
-                    float y = pos.y + startBtn.getHeight();
-                    startMenu.setPosition(x, y);
+                    startMenu.setPosition(pos.x, pos.y + startBtn.getHeight());
                 }
                 startMenu.setVisible(!showing);
             }
@@ -144,11 +184,17 @@ public final class DesktopScreen implements Screen {
     @Override
     public void render(float delta) {
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
+
+        // Actualizo iconos si cambió el FS
+        refreshDesktop();
+
+        // Reloj cada segundo
         acc += delta;
         if (acc >= 1f) {
             acc = 0f;
             updateClock();
         }
+
         stage.act(delta);
         stage.draw();
     }
@@ -178,5 +224,6 @@ public final class DesktopScreen implements Screen {
     public void dispose() {
         stage.dispose();
         skin.dispose();
+        fileTexture.dispose();
     }
 }

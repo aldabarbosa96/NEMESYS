@@ -187,19 +187,34 @@ public final class WindowManager {
 
     private BaseWindow create(AppType type, String path) {
         switch (type) {
-            case TERMINAL:
-                return new TerminalWindow(skin, this, new FileSystemSim());
-            case FILE_EXPLORER:
-                return new FileExplorerWindow(skin, this, new FileSystemSim());
-            case TEXT_EDITOR:
-                String f = (path != null && !path.trim().isEmpty()) ? path : null;
-                return new TextEditorWindow(skin, this, fs, f);
+            case TERMINAL: {
+                FileSystemSim termFs = new FileSystemSim();
+                termFs.toRoot();
+                termFs.cd("Desktop");
+                return new TerminalWindow(skin, this, termFs);
+            }
+            case FILE_EXPLORER: {
+                FileSystemSim expFs = new FileSystemSim();
+                expFs.toRoot();
+                expFs.cd("Desktop");
+                return new FileExplorerWindow(skin, this, expFs);
+            }
+            case TEXT_EDITOR: {
+                // Si viene con path (ej. desde Terminal), úsalo en esa instancia;
+                // si no, lo abrimos en Desktop:
+                FileSystemSim editFs = new FileSystemSim();
+                editFs.toRoot();
+                editFs.cd("Desktop");
+                return new TextEditorWindow(skin, this, editFs, (path != null && !path.isEmpty()) ? path : null);
+            }
             case RECYCLE_BIN:
-                return new RecycleBinWindow(skin, this, recycleFs);
+                // La papelera puede compartir su propio FS
+                return new RecycleBinWindow(skin, this, new FileSystemSim());
             default:
                 throw new IllegalArgumentException("Tipo no soportado: " + type);
         }
     }
+
 
     private void registerToggleStyle() {
         if (skin.has("win95-toggle", TextButton.TextButtonStyle.class)) return;
@@ -225,5 +240,9 @@ public final class WindowManager {
         if (w instanceof TextEditorWindow) return "icon-editor";
         if (w instanceof RecycleBinWindow) return "trash-small";
         return "icon-logo";
+    }
+
+    public FileSystemSim getFs() {
+        return fs;
     }
 }
