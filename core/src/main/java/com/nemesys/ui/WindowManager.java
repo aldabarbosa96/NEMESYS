@@ -1,6 +1,5 @@
 package com.nemesys.ui;
 
-import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.*;
@@ -8,6 +7,7 @@ import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
 import com.badlogic.gdx.scenes.scene2d.utils.Drawable;
 import com.nemesys.fs.FileSystemSim;
 import com.nemesys.fs.VirtualFile;
+import com.nemesys.screens.DesktopScreen;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -24,13 +24,13 @@ public final class WindowManager {
     private final Stage stage;
     private final Skin skin;
     private final Table taskbar;
+    private final DesktopScreen desktopScreen;   // ← REFERENCIA AL SCREEN
 
     private final List<BaseWindow> openWindows = new ArrayList<>();
-    // Ahora guardamos Buttons para poder usar ImageTextButton
     private final Map<BaseWindow, Button> buttons = new HashMap<>();
 
     /**
-     * FS “real”
+     * FS “real” del escritorio
      */
     private final FileSystemSim fs = new FileSystemSim();
     /**
@@ -42,10 +42,14 @@ public final class WindowManager {
      */
     private final Map<String, String> recycleMap = new HashMap<>();
 
-    public WindowManager(Stage stage, Skin skin, Table taskbar) {
+    /**
+     * Ahora recibimos también el DesktopScreen para notificarle cambios.
+     */
+    public WindowManager(Stage stage, Skin skin, Table taskbar, DesktopScreen desktopScreen) {
         this.stage = stage;
         this.skin = skin;
         this.taskbar = taskbar;
+        this.desktopScreen = desktopScreen;
         registerToggleStyle();
     }
 
@@ -94,7 +98,8 @@ public final class WindowManager {
     }
 
     /**
-     * Mueve un archivo de un FS origen a la papelera
+     * Mueve un archivo de un FS origen a la papelera,
+     * y notifica al DesktopScreen para refrescar el escritorio.
      */
     public void moveToRecycle(FileSystemSim sourceFs, String name) {
         VirtualFile vf = sourceFs.removeFile(name);
@@ -103,11 +108,15 @@ public final class WindowManager {
             recycleMap.put(name, originalPath);
             recycleFs.toRoot();
             recycleFs.overwrite(name, vf.content);
+
+            // ——— NOTIFICAMOS AL ESCRITORIO ———
+            desktopScreen.markDesktopDirty();
         }
     }
 
     /**
-     * Restaura un archivo a su ruta original
+     * Restaura un archivo a su ruta original,
+     * y notifica al DesktopScreen para refrescar.
      */
     public void restoreFromRecycle(String name) {
         VirtualFile vf = recycleFs.removeFile(name);
@@ -119,11 +128,15 @@ public final class WindowManager {
                 fs.toRoot();
             }
             fs.overwrite(name, vf.content);
+
+            // ——— NOTIFICAMOS AL ESCRITORIO ———
+            desktopScreen.markDesktopDirty();
         }
     }
 
     /**
-     * Abre un editor desde terminal (“nano”)
+     * Abre un editor desde terminal (“nano”) o dobles clic,
+     * sin afectar al escritorio.
      */
     public void openEditor(String filePath, FileSystemSim fsRef) {
         BaseWindow w = new TextEditorWindow(skin, this, fsRef, filePath);
@@ -136,21 +149,16 @@ public final class WindowManager {
 
     // ────────────────────────────────────────────────────────────
 
-    /**
-     * Ahora devolvemos Button para admitir ImageTextButton
-     */
     private Button getTaskBarButton(BaseWindow w) {
-        // Clonamos el estilo toggle existente
         TextButton.TextButtonStyle base = skin.get("win95-toggle", TextButton.TextButtonStyle.class);
         ImageTextButton.ImageTextButtonStyle style = new ImageTextButton.ImageTextButtonStyle(base);
 
-        // Asignamos icono según tipo de ventana
         String iconName = iconNameFor(w);
         if (skin.has(iconName, Drawable.class)) {
             Drawable ic = skin.getDrawable(iconName);
-            style.imageUp = ic;  // ventana activa
-            style.imageChecked = ic;  // ventana minimizada
-            style.imageDown = ic;  // clic momentáneo
+            style.imageUp = ic;
+            style.imageChecked = ic;
+            style.imageDown = ic;
         }
 
         ImageTextButton btn = new ImageTextButton(w.getWindowTitle(), style);
@@ -200,21 +208,17 @@ public final class WindowManager {
                 return new FileExplorerWindow(skin, this, expFs);
             }
             case TEXT_EDITOR: {
-                // Si viene con path (ej. desde Terminal), úsalo en esa instancia;
-                // si no, lo abrimos en Desktop:
                 FileSystemSim editFs = new FileSystemSim();
                 editFs.toRoot();
                 editFs.cd("Desktop");
                 return new TextEditorWindow(skin, this, editFs, (path != null && !path.isEmpty()) ? path : null);
             }
             case RECYCLE_BIN:
-                // La papelera puede compartir su propio FS
                 return new RecycleBinWindow(skin, this, new FileSystemSim());
             default:
                 throw new IllegalArgumentException("Tipo no soportado: " + type);
         }
     }
-
 
     private void registerToggleStyle() {
         if (skin.has("win95-toggle", TextButton.TextButtonStyle.class)) return;
@@ -225,15 +229,12 @@ public final class WindowManager {
         toggle.checked = skin.getDrawable("btn-up");
         toggle.checkedOver = skin.getDrawable("btn-up");
         toggle.font = skin.getFont("font-win95");
-        toggle.fontColor = Color.BLACK;
-        toggle.downFontColor = Color.BLACK;
-        toggle.checkedFontColor = Color.BLACK;
+        toggle.fontColor = com.badlogic.gdx.graphics.Color.BLACK;
+        toggle.downFontColor = com.badlogic.gdx.graphics.Color.BLACK;
+        toggle.checkedFontColor = com.badlogic.gdx.graphics.Color.BLACK;
         skin.add("win95-toggle", toggle);
     }
 
-    /**
-     * Nombre del drawable según la clase real de la ventana
-     */
     private String iconNameFor(BaseWindow w) {
         if (w instanceof TerminalWindow) return "icon-terminal";
         if (w instanceof FileExplorerWindow) return "icon-explorer";
@@ -244,5 +245,8 @@ public final class WindowManager {
 
     public FileSystemSim getFs() {
         return fs;
+    }
+    public void requestDesktopRefresh() {
+        desktopScreen.markDesktopDirty();
     }
 }

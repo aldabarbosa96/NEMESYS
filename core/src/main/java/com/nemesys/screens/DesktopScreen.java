@@ -27,10 +27,6 @@ import com.nemesys.ui.WindowManager;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 
-/**
- * Pantalla principal que simula el escritorio de NEMESYS OS.
- * Dibuja fondo, iconos, taskbar y gestiona los clics sobre ellos.
- */
 public final class DesktopScreen implements Screen {
 
     private final NemesysGame game;
@@ -42,6 +38,9 @@ public final class DesktopScreen implements Screen {
     private final Table desktopIcons;
     private final Texture fileTexture;
     private float acc;
+
+    // --- NUEVO: bandera para refrescar solo cuando sea necesario ---
+    private boolean desktopDirty = true;
 
     private static final float BAR_H = 46f;
     private static final DateTimeFormatter FMT = DateTimeFormatter.ofPattern("HH:mm");
@@ -63,7 +62,7 @@ public final class DesktopScreen implements Screen {
 
         // 3) Barra de tareas (y su Start‐menu)
         Table taskbarButtons = buildTaskbar();
-        this.wm = new WindowManager(stage, skin, taskbarButtons);
+        this.wm = new WindowManager(stage, skin, taskbarButtons, this);
 
         // 4) Situamos el FS “global” justo en C:\Desktop
         wm.getFs().toRoot();
@@ -79,8 +78,8 @@ public final class DesktopScreen implements Screen {
         desktopIcons.defaults().pad(15).padLeft(20).align(Align.center);
         stage.addActor(desktopIcons);
 
-        // 7) Pintamos los iconos por primera vez
-        refreshDesktop();
+        // 7) Pintamos los iconos por primera vez (desktopDirty=true)
+        //    El propio render() se encargará de llamarlo la primera vez.
 
         // 8) Start menu
         this.startMenu = new StartMenu(skin, wm::open);
@@ -92,7 +91,14 @@ public final class DesktopScreen implements Screen {
     }
 
     /**
-     * Reconstruye los iconos del escritorio SOLO cuando cambie el FS
+     * Marca el escritorio como “sucio” para que se refresque en el siguiente render.
+     */
+    public void markDesktopDirty() {
+        desktopDirty = true;
+    }
+
+    /**
+     * Reconstruye los iconos del escritorio.
      */
     private void refreshDesktop() {
         desktopIcons.clearChildren();
@@ -185,8 +191,11 @@ public final class DesktopScreen implements Screen {
     public void render(float delta) {
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 
-        // Actualizo iconos si cambió el FS
-        refreshDesktop();
+        // --- SOLO refresca si se marcó como “dirty” ---
+        if (desktopDirty) {
+            refreshDesktop();
+            desktopDirty = false;
+        }
 
         // Reloj cada segundo
         acc += delta;

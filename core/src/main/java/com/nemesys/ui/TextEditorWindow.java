@@ -1,4 +1,3 @@
-// File: core/src/main/java/com/nemesys/ui/TextEditorWindow.java
 package com.nemesys.ui;
 
 import com.badlogic.gdx.scenes.scene2d.Stage;
@@ -66,6 +65,7 @@ public final class TextEditorWindow extends BaseWindow {
                 if (name.isEmpty()) return true;
                 if (!name.contains(".")) name += ".txt";
                 fs.overwrite(name, area.getText());
+                mgr.requestDesktopRefresh();                  // ← notificamos al escritorio
                 currentPath = fs.pwd() + "\\" + name;
                 replaceNameFieldWithLabel();
             } else {
@@ -74,6 +74,7 @@ public final class TextEditorWindow extends BaseWindow {
                 if (idx >= 0) fs.cd("..");
                 String base = (idx >= 0) ? currentPath.substring(idx + 1) : currentPath;
                 fs.overwrite(base, area.getText());
+                mgr.requestDesktopRefresh();                  // ← notificamos al escritorio
             }
             return true;
         });
@@ -122,6 +123,7 @@ public final class TextEditorWindow extends BaseWindow {
             // Callback al pulsar Save en el diálogo
             currentPath = fs.pwd() + "\\" + fileName;
             fs.overwrite(fileName, area.getText());
+            mgr.requestDesktopRefresh();
             if (titleLabel != null) {
                 titleLabel.setText(currentPath);
             } else {

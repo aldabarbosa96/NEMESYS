@@ -127,6 +127,9 @@ public final class TerminalWindow extends BaseWindow {
         final String[] fsCmds = {"ls", "dir", "cd", "pwd", "mkdir", "touch", "cat", "tree", "du", "df"};
         if (java.util.Arrays.asList(fsCmds).contains(cmd)) {
             String result = fs.run(cmd, arg);
+            if ("mkdir".equals(cmd) || "touch".equals(cmd)) {
+                manager.requestDesktopRefresh();
+            }
             if (result != null && !result.isEmpty()) {
                 for (String ln : result.split("\n")) writeln(ln);
             }
