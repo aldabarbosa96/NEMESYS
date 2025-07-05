@@ -2,6 +2,7 @@ package com.nemesys.screens;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Screen;
+import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.math.Vector2;
@@ -50,6 +51,8 @@ public final class DesktopScreen implements Screen {
         desktopIcons.setFillParent(true);
         desktopIcons.top().left();
         desktopIcons.defaults().pad(15).padLeft(20).align(Align.center);
+
+        // Papelera icon + label en blanco
         ImageButton recycle = new ImageButton(skin, "trash");
         recycle.addListener(new ChangeListener() {
             @Override
@@ -58,7 +61,10 @@ public final class DesktopScreen implements Screen {
             }
         });
         desktopIcons.add(recycle).size(72, 72).row();
-        desktopIcons.add(new Label("Papelera", skin)).padTop(-18).row();
+
+        Label recycleLbl = new Label("Papelera", skin, "desktop-icon-label");
+        desktopIcons.add(recycleLbl).padTop(-20).row();
+
         stage.addActor(desktopIcons);
 
         // Clock label (will be wrapped in container later)
@@ -93,7 +99,8 @@ public final class DesktopScreen implements Screen {
 
         // Start button
         ImageTextButton startBtn = new ImageTextButton("Inicio", skin, "start-btn-img");
-        startBtn.pad(2, 5, 2, 10);
+        startBtn.getImageCell().padRight(4f);
+        startBtn.pad(2, 5, 2, 5);
         bar.add(startBtn).width(90).padLeft(8);
 
         // Window buttons container

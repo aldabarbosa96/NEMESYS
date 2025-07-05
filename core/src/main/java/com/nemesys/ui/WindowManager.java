@@ -5,6 +5,7 @@ import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.*;
 import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
+import com.badlogic.gdx.scenes.scene2d.utils.Drawable;
 import com.nemesys.fs.FileSystemSim;
 import com.nemesys.fs.VirtualFile;
 
@@ -25,7 +26,8 @@ public final class WindowManager {
     private final Table taskbar;
 
     private final List<BaseWindow> openWindows = new ArrayList<>();
-    private final Map<BaseWindow, TextButton> buttons = new HashMap<>();
+    // Ahora guardamos Buttons para poder usar ImageTextButton
+    private final Map<BaseWindow, Button> buttons = new HashMap<>();
 
     /**
      * FS “real”
@@ -52,7 +54,7 @@ public final class WindowManager {
     }
 
     public void open(AppType type, String filePath) {
-        // Si ya hay una ventana no-editor, la traemos al frente
+        // Re-activar ventana si ya existe (excepto editor)
         if (type != AppType.TEXT_EDITOR) {
             for (BaseWindow w : openWindows) {
                 boolean match = (type == AppType.TERMINAL && w instanceof TerminalWindow) || (type == AppType.FILE_EXPLORER && w instanceof FileExplorerWindow) || (type == AppType.RECYCLE_BIN && w instanceof RecycleBinWindow);
@@ -60,7 +62,7 @@ public final class WindowManager {
                     w.setVisible(true);
                     w.toFront();
                     stage.setKeyboardFocus(w);
-                    TextButton tb = buttons.get(w);
+                    Button tb = buttons.get(w);
                     if (tb != null) tb.setChecked(false);
                     return;
                 }
@@ -72,22 +74,22 @@ public final class WindowManager {
         openWindows.add(w);
         stage.addActor(w);
 
-        TextButton b = getTaskBarButton(w);
-        buttons.put(w, b);
+        Button btn = getTaskBarButton(w);
+        buttons.put(w, btn);
         refreshTaskbar();
     }
 
     public void close(BaseWindow w) {
         if (openWindows.remove(w)) w.remove();
-        TextButton b = buttons.remove(w);
-        if (b != null) b.remove();
+        Button btn = buttons.remove(w);
+        if (btn != null) btn.remove();
         refreshTaskbar();
     }
 
     public void minimize(BaseWindow w) {
         w.setVisible(false);
-        TextButton b = buttons.get(w);
-        if (b != null) b.setChecked(true);
+        Button btn = buttons.get(w);
+        if (btn != null) btn.setChecked(true);
         stage.setKeyboardFocus(null);
     }
 
@@ -99,7 +101,6 @@ public final class WindowManager {
         if (vf != null) {
             String originalPath = sourceFs.pwd();
             recycleMap.put(name, originalPath);
-            // Lo colocamos en la papelera
             recycleFs.toRoot();
             recycleFs.overwrite(name, vf.content);
         }
@@ -111,7 +112,6 @@ public final class WindowManager {
     public void restoreFromRecycle(String name) {
         VirtualFile vf = recycleFs.removeFile(name);
         if (vf != null) {
-            // Recuperamos ruta original
             String originalPath = recycleMap.remove(name);
             if (originalPath != null) {
                 fs.cdAbsolute(originalPath);
@@ -129,20 +129,36 @@ public final class WindowManager {
         BaseWindow w = new TextEditorWindow(skin, this, fsRef, filePath);
         openWindows.add(w);
         stage.addActor(w);
-        TextButton b = getTaskBarButton(w);
-        buttons.put(w, b);
+        Button btn = getTaskBarButton(w);
+        buttons.put(w, btn);
         refreshTaskbar();
     }
 
-    /*────────────────────────────────────────────────────────────────*/
+    // ────────────────────────────────────────────────────────────
 
-    private TextButton getTaskBarButton(BaseWindow w) {
-        TextButton b = new TextButton(w.getWindowTitle(), skin, "win95-toggle");
-        b.pad(2f, 8f, 2f, 8f);
-        b.addListener(new ChangeListener() {
+    /**
+     * Ahora devolvemos Button para admitir ImageTextButton
+     */
+    private Button getTaskBarButton(BaseWindow w) {
+        // Clonamos el estilo toggle existente
+        TextButton.TextButtonStyle base = skin.get("win95-toggle", TextButton.TextButtonStyle.class);
+        ImageTextButton.ImageTextButtonStyle style = new ImageTextButton.ImageTextButtonStyle(base);
+
+        // Asignamos icono según tipo de ventana
+        String iconName = iconNameFor(w);
+        if (skin.has(iconName, Drawable.class)) {
+            Drawable ic = skin.getDrawable(iconName);
+            style.imageUp = ic;  // ventana activa
+            style.imageChecked = ic;  // ventana minimizada
+            style.imageDown = ic;  // clic momentáneo
+        }
+
+        ImageTextButton btn = new ImageTextButton(w.getWindowTitle(), style);
+        btn.pad(2f, 8f, 2f, 8f);
+        btn.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeListener.ChangeEvent event, Actor actor) {
-                if (b.isChecked()) {
+                if (btn.isChecked()) {
                     w.setVisible(false);
                     stage.setKeyboardFocus(null);
                 } else {
@@ -152,19 +168,19 @@ public final class WindowManager {
                 }
             }
         });
-        return b;
+        return btn;
     }
 
     private void refreshTaskbar() {
         taskbar.clearChildren();
         boolean first = true;
         for (BaseWindow w : openWindows) {
-            TextButton b = buttons.get(w);
+            Actor btn = buttons.get(w);
             if (first) {
-                taskbar.add(b).padLeft(8f).padRight(4f);
+                taskbar.add(btn).padLeft(8f).padRight(4f);
                 first = false;
             } else {
-                taskbar.add(b).padRight(4f);
+                taskbar.add(btn).padRight(4f);
             }
         }
     }
@@ -176,8 +192,8 @@ public final class WindowManager {
             case FILE_EXPLORER:
                 return new FileExplorerWindow(skin, this, new FileSystemSim());
             case TEXT_EDITOR:
-                String file = (path != null && !path.trim().isEmpty()) ? path : null;
-                return new TextEditorWindow(skin, this, fs, file);
+                String f = (path != null && !path.trim().isEmpty()) ? path : null;
+                return new TextEditorWindow(skin, this, fs, f);
             case RECYCLE_BIN:
                 return new RecycleBinWindow(skin, this, recycleFs);
             default:
@@ -189,22 +205,25 @@ public final class WindowManager {
         if (skin.has("win95-toggle", TextButton.TextButtonStyle.class)) return;
 
         TextButton.TextButtonStyle toggle = new TextButton.TextButtonStyle();
-
-        // Ventana visible → botón hundido y clarito
         toggle.up = skin.getDrawable("btn-checked-light");
-        // Pulsación momentánea
         toggle.down = skin.getDrawable("btn-down");
-        // Ventana minimizada → bevel normal (igual que Inicio)
         toggle.checked = skin.getDrawable("btn-up");
         toggle.checkedOver = skin.getDrawable("btn-up");
-
         toggle.font = skin.getFont("font-win95");
         toggle.fontColor = Color.BLACK;
         toggle.downFontColor = Color.BLACK;
         toggle.checkedFontColor = Color.BLACK;
-
         skin.add("win95-toggle", toggle);
     }
 
-
+    /**
+     * Nombre del drawable según la clase real de la ventana
+     */
+    private String iconNameFor(BaseWindow w) {
+        if (w instanceof TerminalWindow) return "icon-terminal";
+        if (w instanceof FileExplorerWindow) return "icon-explorer";
+        if (w instanceof TextEditorWindow) return "icon-editor";
+        if (w instanceof RecycleBinWindow) return "trash";
+        return "icon-logo";
+    }
 }

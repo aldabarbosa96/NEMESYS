@@ -5,6 +5,7 @@ import com.badlogic.gdx.scenes.scene2d.ui.*;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.badlogic.gdx.scenes.scene2d.utils.Drawable;
 import com.badlogic.gdx.utils.Align;
+import com.badlogic.gdx.utils.Scaling;
 
 public abstract class BaseWindow extends Window {
     private static final float FRAME = 3f;
@@ -33,11 +34,20 @@ public abstract class BaseWindow extends Window {
         Table bar = new Table();
         bar.setBackground(skin.getDrawable("title"));
 
+        // — Icono, si existe —
+        Image iconImg = null;
+        String iconName = iconNameFor(type);
+        if (skin.has(iconName, Drawable.class)) {
+            iconImg = new Image(skin.getDrawable(iconName));
+            iconImg.setScaling(Scaling.none);
+        }
+
+        // — Etiqueta de título —
         Label titleLbl = getTitleLabel();
         titleLbl.setStyle(skin.get("title-label", Label.LabelStyle.class));
         titleLbl.setAlignment(Align.left);
 
-        // minimizar
+        // — Botones minimizar y cerrar —
         TextButton minimize = new TextButton("_", skin, "win95-window");
         minimize.addListener(new ClickListener() {
             @Override
@@ -46,8 +56,6 @@ public abstract class BaseWindow extends Window {
                 mgr.minimize(BaseWindow.this);
             }
         });
-
-        // cerrar
         TextButton close = new TextButton("X", skin, "win95-window");
         close.addListener(new ClickListener() {
             @Override
@@ -56,7 +64,13 @@ public abstract class BaseWindow extends Window {
             }
         });
 
-        bar.add(titleLbl).expandX().left().padLeft(8f);
+        // — Layout —
+        if (iconImg != null) {
+            bar.add(iconImg).padLeft(6f).padRight(12f).size(18, 18);
+            bar.add(titleLbl).expandX().left();
+        } else {
+            bar.add(titleLbl).expandX().left().padLeft(8f);
+        }
         bar.add(minimize).size(18).padRight(3f);
         bar.add(close).size(18).padRight(6f);
 
@@ -68,6 +82,21 @@ public abstract class BaseWindow extends Window {
         setKeepWithinStage(true);
 
         pack();
+    }
+
+    private static String iconNameFor(WindowManager.AppType t) {
+        switch (t) {
+            case TERMINAL:
+                return "icon-terminal";
+            case FILE_EXPLORER:
+                return "icon-explorer";
+            case TEXT_EDITOR:
+                return "icon-editor";
+            case RECYCLE_BIN:
+                return "trash";
+            default:
+                return "icon-logo";
+        }
     }
 
     @Override

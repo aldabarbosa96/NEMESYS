@@ -1,4 +1,3 @@
-// File: core/src/main/java/com/nemesys/fs/FileSystemSim.java
 package com.nemesys.fs;
 
 import java.util.List;
@@ -25,7 +24,7 @@ public final class FileSystemSim {
     }
 
     public boolean cd(String path) {
-        if (path.equals("..") && cwd != ROOT) {       // subir
+        if (path.equals("..") && cwd != ROOT) {
             cwd = findParent(ROOT, cwd);
             return true;
         }
