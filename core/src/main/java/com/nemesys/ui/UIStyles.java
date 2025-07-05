@@ -71,6 +71,7 @@ public final class UIStyles {
         sk.add("icon-explorer", icon("icons/explorador.png", 25, 25), Drawable.class);
         sk.add("icon-terminal", icon("icons/terminal.png", 25, 25), Drawable.class);
         sk.add("icon-editor", icon("icons/editorTexto.png", 25, 25), Drawable.class);
+        sk.add("icon-logo", icon("icons/logo.png", 25, 25), Drawable.class);
 
         // ── Bisel 3D para botones ─────────────────────────────────
         sk.add("btn-up", new NinePatchDrawable(makeBtnBg(false)), Drawable.class);
@@ -99,6 +100,14 @@ public final class UIStyles {
         btnStyle.fontColor = TEXT;
         sk.add("win95", btnStyle);
         sk.add("start-btn", btnStyle);
+
+        ImageTextButton.ImageTextButtonStyle startImgStyle = new ImageTextButton.ImageTextButtonStyle(btnStyle);
+        startImgStyle.imageUp = sk.getDrawable("icon-logo");
+        startImgStyle.imageDown = sk.getDrawable("icon-logo");
+        startImgStyle.imageOver = sk.getDrawable("icon-logo");
+        startImgStyle.imageDisabled = sk.getDrawable("icon-logo");
+        sk.add("start-btn-img", startImgStyle);
+
         sk.add("win95-window", btnStyle);
         sk.add("default", btnStyle, TextButton.TextButtonStyle.class);
 

@@ -7,13 +7,7 @@ import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.Stage;
-import com.badlogic.gdx.scenes.scene2d.ui.Container;
-import com.badlogic.gdx.scenes.scene2d.ui.Image;
-import com.badlogic.gdx.scenes.scene2d.ui.ImageButton;
-import com.badlogic.gdx.scenes.scene2d.ui.Label;
-import com.badlogic.gdx.scenes.scene2d.ui.Table;
-import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
-import com.badlogic.gdx.scenes.scene2d.ui.Skin;
+import com.badlogic.gdx.scenes.scene2d.ui.*;
 import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
 import com.badlogic.gdx.utils.Align;
 import com.badlogic.gdx.utils.Scaling;
@@ -45,7 +39,7 @@ public final class DesktopScreen implements Screen {
         this.skin = UIStyles.create();
 
         // Wallpaper
-        Texture wall = new Texture(Gdx.files.internal("wallpaper1.png"));
+        Texture wall = new Texture(Gdx.files.internal("wallpaper3.png"));
         Image bg = new Image(wall);
         bg.setFillParent(true);
         bg.setScaling(Scaling.stretch);
@@ -98,8 +92,8 @@ public final class DesktopScreen implements Screen {
         bar.align(Align.left);
 
         // Start button
-        TextButton startBtn = new TextButton("Inicio", skin, "start-btn");
-        startBtn.pad(2, 10, 2, 10);
+        ImageTextButton startBtn = new ImageTextButton("Inicio", skin, "start-btn-img");
+        startBtn.pad(2, 5, 2, 10);
         bar.add(startBtn).width(90).padLeft(8);
 
         // Window buttons container
