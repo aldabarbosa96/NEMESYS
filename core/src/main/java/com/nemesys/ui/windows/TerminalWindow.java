@@ -1,4 +1,4 @@
-package com.nemesys.ui;
+package com.nemesys.ui.windows;
 
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Pixmap;
@@ -8,12 +8,13 @@ import com.badlogic.gdx.scenes.scene2d.ui.*;
 import com.badlogic.gdx.scenes.scene2d.utils.*;
 import com.badlogic.gdx.utils.Align;
 import com.nemesys.fs.FileSystemSim;
+import com.nemesys.ui.managers.WindowsManager;
 
 import java.time.format.DateTimeFormatter;
 
 public final class TerminalWindow extends BaseWindow {
 
-    private final WindowManager manager;
+    private final WindowsManager manager;
     private final FileSystemSim fs;
     private final Skin skin;
 
@@ -24,8 +25,8 @@ public final class TerminalWindow extends BaseWindow {
 
     private static final DateTimeFormatter FMT = DateTimeFormatter.ofPattern("HH:mm:ss");
 
-    public TerminalWindow(Skin skin, WindowManager manager, FileSystemSim fs) {
-        super("Terminal", skin, WindowManager.AppType.TERMINAL, manager);
+    public TerminalWindow(Skin skin, WindowsManager manager, FileSystemSim fs) {
+        super("Terminal", skin, WindowsManager.AppType.TERMINAL, manager);
         this.manager = manager;
         this.fs = fs;
         this.skin = skin;

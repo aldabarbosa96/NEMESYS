@@ -1,4 +1,4 @@
-package com.nemesys.ui;
+package com.nemesys.ui.windows;
 
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.ui.ImageButton;
@@ -8,9 +8,10 @@ import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
 import com.badlogic.gdx.utils.Align;
 import com.nemesys.fs.FileSystemSim;
+import com.nemesys.ui.managers.WindowsManager;
 
 import java.util.ArrayList; // Para listData
-import java.util.List;      // Para listData
+
 
 /**
  * Ventana de Papelera de Reciclaje.
@@ -18,13 +19,13 @@ import java.util.List;      // Para listData
  */
 public final class RecycleBinWindow extends BaseWindow {
 
-    private final WindowManager manager;
+    private final WindowsManager manager;
     private final FileSystemSim binFs;
     private final java.util.List<String> listData = new ArrayList<>();
     private final com.badlogic.gdx.scenes.scene2d.ui.List<String> listView;
 
-    public RecycleBinWindow(Skin skin, WindowManager mgr, FileSystemSim binFs) {
-        super("Papelera de reciclaje", skin, WindowManager.AppType.RECYCLE_BIN, mgr);
+    public RecycleBinWindow(Skin skin, WindowsManager mgr, FileSystemSim binFs) {
+        super("Papelera de reciclaje", skin, WindowsManager.AppType.RECYCLE_BIN, mgr);
         this.manager = mgr;
         this.binFs = binFs;
 

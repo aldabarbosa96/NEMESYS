@@ -1,10 +1,11 @@
-package com.nemesys.ui;
+package com.nemesys.ui.windows;
 
 import com.badlogic.gdx.scenes.scene2d.ui.ImageTextButton;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.ui.Cell;
 import com.badlogic.gdx.utils.Align;
+import com.nemesys.ui.managers.WindowsManager;
 
 import java.util.function.Consumer;
 
@@ -15,7 +16,7 @@ public final class StartMenu extends Table {
     private static final float ICON_TEXT_PAD = 6f;
     private static final float ICON_SIZE = 32f;
 
-    public StartMenu(Skin skin, Consumer<WindowManager.AppType> launcher) {
+    public StartMenu(Skin skin, Consumer<WindowsManager.AppType> launcher) {
         super(skin);
 
         // ─── Fondo y padding de la tabla ──────────────────────────
@@ -34,7 +35,7 @@ public final class StartMenu extends Table {
 
         explorer.addListener(e -> {
             if ("touchDown".equals(e.toString())) {
-                launcher.accept(WindowManager.AppType.FILE_EXPLORER);
+                launcher.accept(WindowsManager.AppType.FILE_EXPLORER);
                 setVisible(false);
             }
             return true;
@@ -49,7 +50,7 @@ public final class StartMenu extends Table {
 
         terminal.addListener(e -> {
             if ("touchDown".equals(e.toString())) {
-                launcher.accept(WindowManager.AppType.TERMINAL);
+                launcher.accept(WindowsManager.AppType.TERMINAL);
                 setVisible(false);
             }
             return true;
@@ -64,7 +65,7 @@ public final class StartMenu extends Table {
 
         editor.addListener(e -> {
             if ("touchDown".equals(e.toString())) {
-                launcher.accept(WindowManager.AppType.TEXT_EDITOR);
+                launcher.accept(WindowsManager.AppType.TEXT_EDITOR);
                 setVisible(false);
             }
             return true;

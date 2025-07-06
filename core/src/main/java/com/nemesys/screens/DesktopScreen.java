@@ -4,6 +4,7 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.Stage;
@@ -16,31 +17,43 @@ import com.badlogic.gdx.scenes.scene2d.ui.Skin;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
+import com.badlogic.gdx.scenes.scene2d.utils.DragAndDrop;
+import com.badlogic.gdx.scenes.scene2d.utils.DragAndDrop.Payload;
+import com.badlogic.gdx.scenes.scene2d.utils.DragAndDrop.Source;
+import com.badlogic.gdx.scenes.scene2d.utils.DragAndDrop.Target;
 import com.badlogic.gdx.utils.Align;
 import com.badlogic.gdx.utils.Scaling;
 import com.badlogic.gdx.utils.viewport.ScreenViewport;
 import com.nemesys.NemesysGame;
-import com.nemesys.ui.StartMenu;
-import com.nemesys.ui.UIStyles;
-import com.nemesys.ui.WindowManager;
+import com.nemesys.ui.managers.*;
+import com.nemesys.ui.windows.*;
+
 
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 public final class DesktopScreen implements Screen {
 
     private final NemesysGame game;
     private final Stage stage;
     private final Skin skin;
-    private final WindowManager wm;
+    private final WindowsManager wm;
     private final StartMenu startMenu;
     private final Label clock;
     private final Table desktopIcons;
     private final Texture fileTexture;
     private float acc;
 
-    // --- NUEVO: bandera para refrescar solo cuando sea necesario ---
+    // ——— NUEVO: gestión de posiciones y DnD ———
+    private final List<String> iconOrder = new ArrayList<>();
+    private final DragAndDrop dnd = new DragAndDrop();
     private boolean desktopDirty = true;
+    private static final float CELL_WIDTH = 100f;
+    private static final float CELL_HEIGHT = 120f;
+    // ————————————————
 
     private static final float BAR_H = 46f;
     private static final DateTimeFormatter FMT = DateTimeFormatter.ofPattern("HH:mm");
@@ -48,7 +61,7 @@ public final class DesktopScreen implements Screen {
     public DesktopScreen(NemesysGame game) {
         this.game = game;
         this.stage = new Stage(new ScreenViewport(), game.batch);
-        this.skin = UIStyles.create();
+        this.skin = UIStylesManager.create();
 
         // 1) Wallpaper
         Texture wall = new Texture(Gdx.files.internal("wallpaper3.png"));
@@ -60,28 +73,30 @@ public final class DesktopScreen implements Screen {
         // 2) Reloj
         this.clock = new Label("", skin);
 
-        // 3) Barra de tareas (y su Start‐menu)
+        // 3) Barra de tareas
         Table taskbarButtons = buildTaskbar();
-        this.wm = new WindowManager(stage, skin, taskbarButtons, this);
+        this.wm = new WindowsManager(stage, skin, taskbarButtons, this);
 
-        // 4) Situamos el FS “global” justo en C:\Desktop
+        // 4) Inicializamos FS y orden de iconos
         wm.getFs().toRoot();
         wm.getFs().cd("Desktop");
+        iconOrder.clear();
+        for (String item : wm.getFs().ls()) {
+            if (!item.endsWith("/")) {
+                iconOrder.add(item);
+            }
+        }
 
-        // 5) Pre‐cargamos la textura genérica de archivo
+        // 5) Pre-cargamos textura genérica de archivo
         this.fileTexture = new Texture(Gdx.files.internal("icons/archivo.png"));
 
-        // 6) Creamos la tabla de iconos una sola vez
+        // 6) Creamos tabla de iconos
         desktopIcons = new Table();
         desktopIcons.setFillParent(true);
         desktopIcons.top().left();
-        desktopIcons.defaults().pad(15).padLeft(20).align(Align.center);
         stage.addActor(desktopIcons);
 
-        // 7) Pintamos los iconos por primera vez (desktopDirty=true)
-        //    El propio render() se encargará de llamarlo la primera vez.
-
-        // 8) Start menu
+        // 7) Start menu
         this.startMenu = new StartMenu(skin, wm::open);
         startMenu.setVisible(false);
         stage.addActor(startMenu);
@@ -91,49 +106,108 @@ public final class DesktopScreen implements Screen {
     }
 
     /**
-     * Marca el escritorio como “sucio” para que se refresque en el siguiente render.
+     * Marca el escritorio como “sucio” para refrescarlo
      */
     public void markDesktopDirty() {
         desktopDirty = true;
     }
 
     /**
-     * Reconstruye los iconos del escritorio.
+     * Reconstruye la cuadrícula de iconos
      */
     private void refreshDesktop() {
         desktopIcons.clearChildren();
 
-        // — Papelera de reciclaje —
-        ImageButton recycle = new ImageButton(skin, "trash");
-        recycle.addListener(new ClickListener() {
-            @Override
-            public void clicked(InputEvent event, float x, float y) {
-                wm.open(WindowManager.AppType.RECYCLE_BIN);
-            }
-        });
-        desktopIcons.add(recycle).size(62, 62).row();
-        desktopIcons.add(new Label("Papelera", skin, "desktop-icon-label")).padTop(-15).row();
-
-        // — Archivos en C:\Desktop —
-        TextureRegionDrawable fileDrw = new TextureRegionDrawable(fileTexture);
+        // Sincronizamos iconOrder con los archivos actuales
+        List<String> current = new ArrayList<>();
         for (String item : wm.getFs().ls()) {
-            if (item.endsWith("/")) continue;
-            ImageButton.ImageButtonStyle style = new ImageButton.ImageButtonStyle();
-            style.imageUp = fileDrw;
-            style.imageDown = fileDrw;
-            style.imageOver = fileDrw;
-            ImageButton fileBtn = new ImageButton(style);
-            fileBtn.addListener(new ClickListener() {
-                @Override
-                public void clicked(InputEvent event, float x, float y) {
-                    wm.openEditor(item, wm.getFs());
-                }
-            });
-            desktopIcons.add(fileBtn).size(62, 62).row();
-            desktopIcons.add(new Label(item, skin, "desktop-icon-label")).padTop(-15).row();
+            if (!item.endsWith("/")) current.add(item);
+        }
+        iconOrder.retainAll(current);
+        for (String f : current) {
+            if (!iconOrder.contains(f)) iconOrder.add(f);
+        }
+
+        // Papelera en la primera celda
+        addIconCell("Papelera", skin.getDrawable("trash"), true);
+
+        // Columnas según ancho de pantalla
+        int cols = Math.max(1, (int) (Gdx.graphics.getWidth() / CELL_WIDTH));
+
+        // Añadimos cada archivo según iconOrder
+        for (int i = 0; i < iconOrder.size(); i++) {
+            String name = iconOrder.get(i);
+            addIconCell(name, new TextureRegionDrawable(new TextureRegion(fileTexture)), false);
+            if ((i + 2) % cols == 0) {
+                desktopIcons.row();
+            }
         }
     }
 
+    /**
+     * Crea una celda con icono y etiqueta, y la registra para Drag & Drop.
+     */
+    private void addIconCell(final String name, final com.badlogic.gdx.scenes.scene2d.utils.Drawable iconDrw, final boolean isRecycle) {
+        final Table cell = new Table();
+        cell.defaults().center();
+
+        ImageButton btn = new ImageButton(new ImageButton.ImageButtonStyle() {{
+            imageUp = iconDrw;
+            imageDown = iconDrw;
+            imageOver = iconDrw;
+        }});
+        btn.addListener(new ClickListener() {
+            @Override
+            public void clicked(InputEvent event, float x, float y) {
+                if (isRecycle) {
+                    wm.open(WindowsManager.AppType.RECYCLE_BIN);
+                } else {
+                    wm.openEditor(name, wm.getFs());
+                }
+            }
+        });
+
+        Label lbl = new Label(name, skin, "desktop-icon-label");
+        lbl.setWrap(true);
+        lbl.setAlignment(Align.center);
+        lbl.setWidth(CELL_WIDTH - 20);
+
+        cell.add(btn).size(60, 60).padTop(5).row();
+        cell.add(lbl).width(CELL_WIDTH - 20);
+
+        // Fuente de Drag
+        dnd.addSource(new Source(btn) {
+            @Override
+            public Payload dragStart(InputEvent event, float x, float y, int pointer) {
+                Payload payload = new Payload();
+                payload.setObject(name);
+                return payload;
+            }
+        });
+        // Objetivo de Drop
+        dnd.addTarget(new Target(cell) {
+            @Override
+            public boolean drag(Source source, Payload payload, float x, float y, int pointer) {
+                return true;
+            }
+
+            @Override
+            public void drop(Source source, Payload payload, float x, float y, int pointer) {
+                String dragged = (String) payload.getObject();
+                int from = iconOrder.indexOf(dragged);
+                int to = iconOrder.indexOf(name);
+                if (name.equals("Papelera")) return;
+                Collections.swap(iconOrder, from, to);
+                markDesktopDirty();
+            }
+        });
+
+        desktopIcons.add(cell).width(CELL_WIDTH).height(CELL_HEIGHT).pad(8);
+    }
+
+    /**
+     * Construye la barra de tareas con botón Inicio y reloj
+     */
     private Table buildTaskbar() {
         Table root = new Table();
         root.setFillParent(true);
@@ -145,18 +219,15 @@ public final class DesktopScreen implements Screen {
         bar.getBackground().setMinHeight(BAR_H);
         bar.align(Align.left);
 
-        // — Start btn —
         ImageTextButton startBtn = new ImageTextButton("Inicio", skin, "start-btn-img");
         startBtn.getImageCell().padRight(4f).padLeft(-5);
         startBtn.pad(2);
         bar.add(startBtn).width(90).padLeft(2).height(BAR_H - 7.5f);
 
-        // — Ventanas abiertas —
         Table btnBar = new Table();
         btnBar.left();
         bar.add(btnBar).expandX().left();
 
-        // — Reloj —
         Container<Label> clockC = new Container<>(clock);
         clockC.background(skin.getDrawable("btn-checked"));
         clockC.pad(2, 8, 2, 8);
@@ -164,16 +235,15 @@ public final class DesktopScreen implements Screen {
 
         root.add(bar).growX().height(BAR_H);
 
-        // Toggle Start menu
         startBtn.addListener(new ClickListener() {
             @Override
             public void clicked(InputEvent e, float x, float y) {
                 boolean showing = startMenu.isVisible();
                 if (!showing) {
-                    startMenu.pack();
-                    startMenu.setWidth(200f);
                     Vector2 pos = new Vector2();
                     startBtn.localToStageCoordinates(pos);
+                    startMenu.pack();
+                    startMenu.setWidth(200f);
                     startMenu.setPosition(pos.x, pos.y + startBtn.getHeight());
                 }
                 startMenu.setVisible(!showing);
@@ -183,6 +253,9 @@ public final class DesktopScreen implements Screen {
         return btnBar;
     }
 
+    /**
+     * Actualiza el reloj cada segundo
+     */
     private void updateClock() {
         clock.setText(LocalTime.now().format(FMT));
     }
@@ -191,13 +264,11 @@ public final class DesktopScreen implements Screen {
     public void render(float delta) {
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 
-        // --- SOLO refresca si se marcó como “dirty” ---
         if (desktopDirty) {
             refreshDesktop();
             desktopDirty = false;
         }
 
-        // Reloj cada segundo
         acc += delta;
         if (acc >= 1f) {
             acc = 0f;

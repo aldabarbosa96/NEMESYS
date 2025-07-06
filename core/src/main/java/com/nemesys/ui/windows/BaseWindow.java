@@ -1,4 +1,4 @@
-package com.nemesys.ui;
+package com.nemesys.ui.windows;
 
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.ui.*;
@@ -6,16 +6,17 @@ import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.badlogic.gdx.scenes.scene2d.utils.Drawable;
 import com.badlogic.gdx.utils.Align;
 import com.badlogic.gdx.utils.Scaling;
+import com.nemesys.ui.managers.WindowsManager;
 
 public abstract class BaseWindow extends Window {
     private static final float FRAME = 3f;
     private static final float BAR = 30f;
 
-    private final WindowManager.AppType type;
-    private final WindowManager mgr;
+    private final WindowsManager.AppType type;
+    private final WindowsManager mgr;
     private final String windowTitle;
 
-    public BaseWindow(String title, Skin skin, WindowManager.AppType type, WindowManager mgr) {
+    public BaseWindow(String title, Skin skin, WindowsManager.AppType type, WindowsManager mgr) {
         super(title, skin);
         this.windowTitle = title;
         this.type = type;
@@ -84,7 +85,7 @@ public abstract class BaseWindow extends Window {
         pack();
     }
 
-    private static String iconNameFor(WindowManager.AppType t) {
+    private static String iconNameFor(WindowsManager.AppType t) {
         switch (t) {
             case TERMINAL:
                 return "icon-terminal";

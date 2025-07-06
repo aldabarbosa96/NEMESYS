@@ -1,4 +1,4 @@
-package com.nemesys.ui;
+package com.nemesys.ui.managers;
 
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.Stage;
@@ -8,13 +8,14 @@ import com.badlogic.gdx.scenes.scene2d.utils.Drawable;
 import com.nemesys.fs.FileSystemSim;
 import com.nemesys.fs.VirtualFile;
 import com.nemesys.screens.DesktopScreen;
+import com.nemesys.ui.windows.*;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public final class WindowManager {
+public final class WindowsManager {
 
     /**
      * Tipos de “apps”
@@ -45,7 +46,7 @@ public final class WindowManager {
     /**
      * Ahora recibimos también el DesktopScreen para notificarle cambios.
      */
-    public WindowManager(Stage stage, Skin skin, Table taskbar, DesktopScreen desktopScreen) {
+    public WindowsManager(Stage stage, Skin skin, Table taskbar, DesktopScreen desktopScreen) {
         this.stage = stage;
         this.skin = skin;
         this.taskbar = taskbar;

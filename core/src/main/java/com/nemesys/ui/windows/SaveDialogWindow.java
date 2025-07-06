@@ -1,4 +1,4 @@
-package com.nemesys.ui;
+package com.nemesys.ui.windows;
 
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.*;
@@ -8,7 +8,7 @@ import com.nemesys.fs.FileSystemSim;
 
 import java.util.function.Consumer;
 
-public final class SaveDialog extends Window {
+public final class SaveDialogWindow extends Window {
     private static final float FRAME = 3f;
     private static final float BAR = 30f;
 
@@ -21,7 +21,7 @@ public final class SaveDialog extends Window {
     /**
      * Constructor estándar.
      */
-    public SaveDialog(Skin skin, FileSystemSim fs, Consumer<String> onSave) {
+    public SaveDialogWindow(Skin skin, FileSystemSim fs, Consumer<String> onSave) {
         super("Save As...", skin);
         this.fs = fs;
         this.onSave = onSave;
@@ -126,7 +126,7 @@ public final class SaveDialog extends Window {
     /**
      * Nuevo constructor que pre-puebla el campo de nombre.
      */
-    public SaveDialog(Skin skin, FileSystemSim fs, Consumer<String> onSave, String defaultName) {
+    public SaveDialogWindow(Skin skin, FileSystemSim fs, Consumer<String> onSave, String defaultName) {
         this(skin, fs, onSave);
         nameField.setText(defaultName);
         nameField.setMessageText(defaultName);

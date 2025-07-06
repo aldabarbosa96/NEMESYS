@@ -1,4 +1,4 @@
-package com.nemesys.ui;
+package com.nemesys.ui.managers;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Color;
@@ -14,7 +14,7 @@ import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator.FreeTypeFont
 import com.badlogic.gdx.scenes.scene2d.ui.*;
 import com.badlogic.gdx.scenes.scene2d.utils.*;
 
-public final class UIStyles {
+public final class UIStylesManager {
 
     private static final Color FACE = Color.valueOf("C0C0C0");
     private static final Color HILITE = Color.valueOf("FFFFFF");
@@ -24,7 +24,7 @@ public final class UIStyles {
     private static final Color TEXT = Color.valueOf("000000");
     private static final Color GREEN = Color.valueOf("00FF00"); // para terminal
 
-    private UIStyles() { /* no instanciable */ }
+    private UIStylesManager() { /* no instanciable */ }
 
     public static Skin create() {
         Skin sk = new Skin();

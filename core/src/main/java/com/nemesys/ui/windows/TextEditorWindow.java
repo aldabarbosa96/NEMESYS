@@ -1,14 +1,15 @@
-package com.nemesys.ui;
+package com.nemesys.ui.windows;
 
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.*;
 import com.nemesys.fs.FileSystemSim;
+import com.nemesys.ui.managers.WindowsManager;
 
 import java.io.File;
 
 public final class TextEditorWindow extends BaseWindow {
     private final FileSystemSim fs;
-    private final WindowManager mgr;
+    private final WindowsManager mgr;
     private String currentPath;
 
     private final Table bar;
@@ -18,8 +19,8 @@ public final class TextEditorWindow extends BaseWindow {
     private final ImageButton saveAsBtn;
     private final TextArea area;
 
-    public TextEditorWindow(Skin skin, WindowManager mgr, FileSystemSim fs, String path) {
-        super("Editor", skin, WindowManager.AppType.TEXT_EDITOR, mgr);
+    public TextEditorWindow(Skin skin, WindowsManager mgr, FileSystemSim fs, String path) {
+        super("Editor", skin, WindowsManager.AppType.TEXT_EDITOR, mgr);
         this.fs = fs;
         this.mgr = mgr;
         this.currentPath = (path != null && !path.trim().isEmpty()) ? path : null;
@@ -119,7 +120,7 @@ public final class TextEditorWindow extends BaseWindow {
             if (defaultName.isEmpty()) defaultName = "Untitled.txt";
         }
 
-        SaveDialog dlg = new SaveDialog(getSkin(), fs, fileName -> {
+        SaveDialogWindow dlg = new SaveDialogWindow(getSkin(), fs, fileName -> {
             // Callback al pulsar Save en el diálogo
             currentPath = fs.pwd() + "\\" + fileName;
             fs.overwrite(fileName, area.getText());

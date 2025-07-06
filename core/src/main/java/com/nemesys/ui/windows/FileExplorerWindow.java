@@ -1,4 +1,4 @@
-package com.nemesys.ui;
+package com.nemesys.ui.windows;
 
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
@@ -7,19 +7,20 @@ import com.badlogic.gdx.scenes.scene2d.ui.*;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.badlogic.gdx.utils.Align;
 import com.nemesys.fs.FileSystemSim;
+import com.nemesys.ui.managers.WindowsManager;
 
 import java.util.List;
 
 public final class FileExplorerWindow extends BaseWindow {
 
-    private final WindowManager manager;
+    private final WindowsManager manager;
     private final FileSystemSim fs;
     private final Skin skin;
     private final com.badlogic.gdx.scenes.scene2d.ui.List<String> list;
     private final Label pathLabel;
 
-    public FileExplorerWindow(Skin skin, WindowManager manager, FileSystemSim fs) {
-        super("File Explorer", skin, WindowManager.AppType.FILE_EXPLORER, manager);
+    public FileExplorerWindow(Skin skin, WindowsManager manager, FileSystemSim fs) {
+        super("File Explorer", skin, WindowsManager.AppType.FILE_EXPLORER, manager);
         this.manager = manager;
         this.fs = fs;
         this.skin = skin;
